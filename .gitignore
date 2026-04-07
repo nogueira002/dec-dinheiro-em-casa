@@ -1,0 +1,70 @@
+# ========================
+# .NET / C#
+# ========================
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+*.cache
+*.vs/
+project.lock.json
+appsettings.Development.json
+
+# ========================
+# Python / Django
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+*.env
+db.sqlite3
+*.log
+media/
+staticfiles/
+
+# ========================
+# Node.js (caso necessario)
+# ========================
+node_modules/
+npm-debug.log*
+
+# ========================
+# MySQL
+# ========================
+*.sql.gz
+mysql/data/
+
+# ========================
+# Docker
+# ========================
+docker-compose.override.yml
+
+# ========================
+# IDEs e Editores
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# Certificados e segredos
+# ========================
+*.pem
+*.key
+*.crt
+*.env.local
+*.env.production
