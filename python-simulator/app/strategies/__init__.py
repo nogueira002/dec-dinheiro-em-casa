@@ -1,1 +1,3 @@
-# Strategies Package
+from app.strategies.estrategia_conservadora import EstrategiaConservadora
+from app.strategies.estrategia_moderada import EstrategiaModerada
+from app.strategies.estrategia_agressiva import EstrategiaAgressiva

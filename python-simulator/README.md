@@ -13,7 +13,7 @@ python app/main.py
 
 ### Com Docker
 docker build -t python-simulator .
-docker run -p 5000:5000 python-simulator
+docker run -p 5001:5001 python-simulator
 
 ## Endpoints
 | Método | Endpoint | Descrição |
