@@ -1,3 +1,0 @@
-from app.factories.fabrica_estudante import FabricaEstudante
-from app.factories.fabrica_familia_monoparental import FabricaFamiliaMonoparental
-from app.factories.fabrica_casal import FabricaCasal
