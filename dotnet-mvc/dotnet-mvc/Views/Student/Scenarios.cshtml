@@ -1,0 +1,86 @@
+@{
+    ViewData["Title"] = "Cenários familiares";
+    ViewData["PageTitle"] = "Cenários familiares";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "scenarios";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+
+    // placeholder: lista de cenários (alterar para new[]{} para ver estado vazio)
+    var scenarios = new[]
+    {
+        new { Name = "Família Costa", Type = "Casal com filhos", Members = 4, Balance = "1.850,00 €", Location = "Lisboa" },
+        new { Name = "Estudante em Coimbra", Type = "Estudante deslocado", Members = 1, Balance = "620,00 €", Location = "Coimbra" },
+        new { Name = "A Joana", Type = "Família monoparental", Members = 2, Balance = "1.120,00 €", Location = "Porto" }
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Cenários familiares</h1>
+        <p class="page-header__subtitle">Cria perfis diferentes e descobre o impacto das tuas decisões.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--primary" asp-controller="Student" asp-action="CreateScenario">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Criar cenário
+        </a>
+    </div>
+</div>
+
+@if (scenarios.Length == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">🏠</div>
+        <div class="empty-state__title">Ainda não tens cenários criados</div>
+        <p class="empty-state__text">
+            Cria o teu primeiro cenário familiar e começa a explorar como
+            diferentes contextos influenciam as decisões financeiras.
+        </p>
+        <a class="btn btn--primary" asp-controller="Student" asp-action="CreateScenario">
+            Criar primeiro cenário
+        </a>
+    </div>
+}
+else
+{
+    <div class="grid grid--auto-md">
+        @foreach (var s in scenarios)
+        {
+            <article class="scenario-card">
+                <div class="scenario-card__header">
+                    <div>
+                        <h3 class="scenario-card__title">@s.Name</h3>
+                        <div class="scenario-card__meta mt-1">
+                            <span class="badge badge--primary">@s.Type</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-card__meta">
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        @s.Location
+                    </div>
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        @s.Members membros
+                    </div>
+                    <div class="scenario-card__row">
+                        <strong style="color: var(--color-primary); font-size: 1.1rem;">@s.Balance</strong>
+                        <span class="text-sm text-muted">saldo inicial</span>
+                    </div>
+                </div>
+
+                <div class="card__footer">
+                    <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Entries">Ver detalhes</a>
+                    <button class="btn btn--ghost btn--sm text-danger"
+                            data-confirm="Apagar o cenário '@s.Name'? Esta ação não pode ser desfeita.">
+                        Apagar
+                    </button>
+                </div>
+            </article>
+        }
+    </div>
+}

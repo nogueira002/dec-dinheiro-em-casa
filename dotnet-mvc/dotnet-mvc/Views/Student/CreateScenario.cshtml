@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Criar cenário";
+    ViewData["PageTitle"] = "Criar cenário";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "scenarios";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Criar novo cenário</h1>
+        <p class="page-header__subtitle">Define o perfil da família que vais simular.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Student" asp-action="Scenarios">← Voltar</a>
+    </div>
+</div>
+
+<div style="max-width: 720px;">
+
+    <form asp-controller="Student" asp-action="CreateScenario" method="post" novalidate>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Identificação</h2>
+                    <p class="card__subtitle">Como queres chamar a este cenário?</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label form-label--required" for="Name">Nome da família</label>
+                <input class="form-control"
+                       type="text"
+                       id="Name"
+                       name="Name"
+                       placeholder="Ex.: Família Silva"
+                       required />
+                <span class="form-hint">Um nome curto e fácil de identificar.</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label form-label--required" for="Location">Localização</label>
+                    <input class="form-control"
+                           type="text"
+                           id="Location"
+                           name="Location"
+                           placeholder="Ex.: Lisboa"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label form-label--required" for="Members">Número de membros</label>
+                    <input class="form-control"
+                           type="number"
+                           id="Members"
+                           name="Members"
+                           min="1"
+                           max="10"
+                           value="2"
+                           required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label form-label--required" for="InitialBalance">Saldo inicial (€)</label>
+                <input class="form-control"
+                       type="number"
+                       id="InitialBalance"
+                       name="InitialBalance"
+                       step="0.01"
+                       min="0"
+                       placeholder="0,00"
+                       required />
+                <span class="form-hint">O valor disponível em conta no início do cenário.</span>
+            </div>
+        </div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Tipo de família</h2>
+                    <p class="card__subtitle">Escolhe o perfil que melhor se aplica.</p>
+                </div>
+            </div>
+
+            <div class="option-cards">
+                <label class="option-card">
+                    <input type="radio" name="Type" value="StudentDeslocado" checked />
+                    <div class="option-card__title">🎓 Estudante deslocado</div>
+                    <div class="option-card__desc">A viver fora de casa para estudar.</div>
+                </label>
+                <label class="option-card">
+                    <input type="radio" name="Type" value="Casal" />
+                    <div class="option-card__title">💑 Casal</div>
+                    <div class="option-card__desc">Dois rendimentos, despesas partilhadas.</div>
+                </label>
+                <label class="option-card">
+                    <input type="radio" name="Type" value="Monoparental" />
+                    <div class="option-card__title">👩‍👧 Família monoparental</div>
+                    <div class="option-card__desc">Um adulto a cargo de um ou mais filhos.</div>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Criar cenário</button>
+            <a class="btn btn--ghost" asp-controller="Student" asp-action="Scenarios">Cancelar</a>
+        </div>
+
+    </form>
+</div>

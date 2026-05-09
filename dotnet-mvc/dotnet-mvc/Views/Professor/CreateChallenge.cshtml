@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Criar desafio";
+    ViewData["PageTitle"] = "Criar desafio";
+    ViewData["Role"] = "Professor";
+    ViewData["ActiveMenu"] = "create-challenge";
+    ViewData["UserName"] = "Prof. Santos";
+    ViewData["UserRoleLabel"] = "Professor";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Criar novo desafio</h1>
+        <p class="page-header__subtitle">Define o desafio que vais atribuir aos teus alunos.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Professor" asp-action="Dashboard">← Voltar</a>
+    </div>
+</div>
+
+<div style="max-width: 720px;">
+    <form asp-controller="Professor" asp-action="CreateChallenge" method="post" novalidate>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Conteúdo do desafio</h2>
+                    <p class="card__subtitle">O que queres que os alunos façam?</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label form-label--required" for="Title">Título</label>
+                <input class="form-control"
+                       type="text"
+                       id="Title"
+                       name="Title"
+                       placeholder="Ex.: Aplicar a regra 50/30/20"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label form-label--required" for="Description">Descrição</label>
+                <textarea class="form-textarea"
+                          id="Description"
+                          name="Description"
+                          rows="6"
+                          placeholder="Descreve o objetivo, contexto, dados a utilizar e formato de entrega esperado."
+                          required></textarea>
+                <span class="form-hint">Sê claro e específico para evitar dúvidas.</span>
+            </div>
+        </div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Atribuição</h2>
+                    <p class="card__subtitle">A que turma vais atribuir este desafio?</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label form-label--required" for="ClassId">Turma</label>
+                    <select class="form-select" id="ClassId" name="ClassId" required>
+                        <option value="">— Escolher turma —</option>
+                        <option>11.º A · Economia</option>
+                        <option>11.º B · Economia</option>
+                        <option>12.º A · Economia C</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label form-label--required" for="Deadline">Prazo de entrega</label>
+                    <input class="form-control"
+                           type="date"
+                           id="Deadline"
+                           name="Deadline"
+                           required />
+                </div>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" id="NotifyStudents" name="NotifyStudents" checked />
+                <label for="NotifyStudents">Notificar os alunos por email</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Atribuir desafio</button>
+            <a class="btn btn--ghost" asp-controller="Professor" asp-action="Dashboard">Cancelar</a>
+        </div>
+
+    </form>
+</div>

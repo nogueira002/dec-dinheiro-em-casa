@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "dashboard";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Olá, Maria 👋</h1>
+        <p class="page-header__subtitle">Aqui está um resumo do teu mês financeiro.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--outline" asp-controller="Student" asp-action="CreateScenario">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo cenário
+        </a>
+        <a class="btn btn--primary" asp-controller="Student" asp-action="Simulations">
+            Simular agora
+        </a>
+    </div>
+</div>
+
+@* ===== KPIs ===== *@
+<div class="grid grid--4 mb-8">
+
+    <div class="stat-card">
+        <div class="stat-card__icon">€</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Saldo atual</div>
+            <div class="stat-card__value">1.245,80 €</div>
+            <div class="stat-card__hint text-success">+12% vs. mês anterior</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">%</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Taxa de esforço</div>
+            <div class="stat-card__value">32%</div>
+            <div class="stat-card__hint">Saudável (limite: 40%)</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">↑</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Objetivo de poupança</div>
+            <div class="stat-card__value">45%</div>
+            <div class="stat-card__hint">450 € de 1 000 €</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">★</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Desafios</div>
+            <div class="stat-card__value">3</div>
+            <div class="stat-card__hint">2 pendentes · 1 avaliado</div>
+        </div>
+    </div>
+
+</div>
+
+@* ===== Gráfico + Desafios ===== *@
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6);">
+
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Evolução financeira</h2>
+                <p class="card__subtitle">Últimos 6 meses</p>
+            </div>
+            <select class="filters-bar__select">
+                <option>6 meses</option>
+                <option>12 meses</option>
+                <option>Tudo</option>
+            </select>
+        </div>
+
+        <div class="chart-placeholder">
+            <svg class="chart-placeholder__line" viewBox="0 0 600 240" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#0C73B7" stop-opacity="0.35"/>
+                        <stop offset="100%" stop-color="#0C73B7" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="M0,180 L100,150 L200,170 L300,120 L400,100 L500,80 L600,60 L600,240 L0,240 Z"
+                      fill="url(#chartGrad)" />
+                <path d="M0,180 L100,150 L200,170 L300,120 L400,100 L500,80 L600,60"
+                      stroke="#0C73B7" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <div class="chart-placeholder__label">📈 Crescimento de 38% no período</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h2 class="card__title">Desafios pendentes</h2>
+        </div>
+
+        <div class="activity-list">
+            <div class="activity-item">
+                <div class="activity-item__icon">!</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Poupança 50/30/20</div>
+                    <div class="activity-item__meta">Entrega: 18 de maio</div>
+                </div>
+                <span class="badge badge--warning">Pendente</span>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-item__icon">!</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Crédito habitação</div>
+                    <div class="activity-item__meta">Entrega: 22 de maio</div>
+                </div>
+                <span class="badge badge--warning">Pendente</span>
+            </div>
+
+            <div class="activity-item">
+                <div class="activity-item__icon" style="background: var(--color-success-light); color: var(--color-success);">✓</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Orçamento mensal</div>
+                    <div class="activity-item__meta">Nota: 18/20</div>
+                </div>
+                <span class="badge badge--success">Avaliado</span>
+            </div>
+        </div>
+
+        <div class="card__footer">
+            <span class="text-sm text-muted">3 desafios este mês</span>
+            <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Challenges">
+                Ver todos →
+            </a>
+        </div>
+    </div>
+
+</div>

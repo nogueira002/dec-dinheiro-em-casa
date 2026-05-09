@@ -1,8 +1,201 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Início";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+}
+
+@* ============================== HERO ============================== *@
+<section class="hero">
+    <div class="hero__container">
+
+        <div class="hero__content fade-in">
+            <span class="hero__pill">
+                <span class="hero__pill-dot"></span>
+                Plataforma educativa · ISTEC
+            </span>
+
+            <h1 class="hero__title">
+                Aprende a gerir o teu dinheiro
+                <span class="hero__title-highlight">como um adulto.</span>
+            </h1>
+
+            <p class="hero__lead">
+                O DEC – Dinheiro em Casa é a plataforma de literacia financeira
+                que te leva da teoria à prática: cria cenários familiares,
+                regista gastos, simula decisões e descobre o impacto real do
+                dinheiro nas tuas escolhas.
+            </p>
+
+            <div class="hero__cta">
+                <a class="btn btn--primary btn--lg" asp-controller="Auth" asp-action="Register">
+                    Começar agora
+                </a>
+                <a class="btn btn--outline btn--lg" href="#funcionalidades">
+                    Ver como funciona
+                </a>
+            </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+
+            <div class="hero__card hero__card--main">
+                <div class="hero__card-icon">€</div>
+                <div class="hero__card-label">Saldo do mês</div>
+                <div class="hero__card-value">1.245,80 €</div>
+                <div class="hero__card-bar">
+                    <div class="hero__card-bar-fill" style="width: 72%"></div>
+                </div>
+                <div class="text-sm text-muted mt-2">72% do objetivo mensal</div>
+            </div>
+
+            <div class="hero__card hero__card--top">
+                <div class="hero__card-label">Taxa de esforço</div>
+                <div class="hero__card-value" style="font-size: 1.3rem; color: var(--color-success);">
+                    32%
+                </div>
+                <div class="text-sm text-muted">Saudável</div>
+            </div>
+
+            <div class="hero__card hero__card--bottom">
+                <div class="hero__card-label">Objetivo</div>
+                <div class="hero__card-value" style="font-size: 1.1rem;">Universidade</div>
+                <div class="hero__card-bar">
+                    <div class="hero__card-bar-fill" style="width: 45%; background: var(--color-success);"></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+@* ============================== FUNCIONALIDADES ============================== *@
+<section class="section" id="funcionalidades">
+    <div class="container">
+
+        <div class="section__header">
+            <span class="section__eyebrow">O que podes fazer</span>
+            <h2 class="section__title">Três módulos que mudam a tua relação com o dinheiro</h2>
+            <p class="section__lead">
+                Pensado para alunos do secundário, o DEC combina pedagogia, dados
+                reais e simulação para tornar conceitos abstratos em decisões concretas.
+            </p>
+        </div>
+
+        <div class="grid grid--3">
+
+            <article class="feature-card">
+                <div class="feature-card__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Cenários familiares</h3>
+                <p class="feature-card__text">
+                    Cria perfis de famílias diferentes — estudante deslocado, casal,
+                    família monoparental — e descobre como cada decisão impacta o
+                    orçamento mensal.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-card__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Simulações financeiras</h3>
+                <p class="feature-card__text">
+                    Compara estratégias conservadoras, moderadas e agressivas. Vê
+                    em tempo real o efeito da poupança, do crédito e da taxa de
+                    esforço a longo prazo.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-card__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                        <path d="M4 22h16"/>
+                    </svg>
+                </div>
+                <h3 class="feature-card__title">Desafios e turmas</h3>
+                <p class="feature-card__text">
+                    Os professores criam desafios práticos, acompanham o progresso
+                    de cada turma e dão feedback individual a cada submissão.
+                </p>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+@* ============================== SOBRE ============================== *@
+<section class="about" id="sobre">
+    <div class="about__container">
+
+        <div class="about__visual" aria-hidden="true">
+            <div class="about__stat">
+                <div class="about__stat-value">+12k</div>
+                <div class="about__stat-label">Alunos formados em literacia financeira</div>
+            </div>
+            <div class="about__stat">
+                <div class="about__stat-value">230</div>
+                <div class="about__stat-label">Escolas a usar a plataforma</div>
+            </div>
+            <div class="about__stat">
+                <div class="about__stat-value">98%</div>
+                <div class="about__stat-label">Recomendariam o DEC a um colega</div>
+            </div>
+        </div>
+
+        <div class="about__text">
+            <span class="section__eyebrow">Sobre o projeto</span>
+            <h2>Educação financeira que começa em casa.</h2>
+            <p>
+                Desenvolvido no ISTEC, o DEC – Dinheiro em Casa nasce da convicção
+                de que a literacia financeira não pode ficar de fora do percurso
+                escolar. Trazemos para o secundário ferramentas que ajudam alunos
+                e professores a discutir orçamento, poupança, crédito e investimento
+                a partir de situações concretas do dia-a-dia.
+            </p>
+
+            <ul class="about__list">
+                <li class="about__list-item">
+                    <span class="about__list-icon">✓</span>
+                    Conteúdos alinhados com o currículo nacional
+                </li>
+                <li class="about__list-item">
+                    <span class="about__list-icon">✓</span>
+                    Acompanhamento personalizado por professor
+                </li>
+                <li class="about__list-item">
+                    <span class="about__list-icon">✓</span>
+                    Dados realistas e cenários portugueses
+                </li>
+            </ul>
+
+            <a class="btn btn--primary" asp-controller="Auth" asp-action="Register">
+                Junta-te ao projeto
+            </a>
+        </div>
+
+    </div>
+</section>
+
+@* ============================== CTA FINAL ============================== *@
+<section class="cta-banner">
+    <div class="cta-banner__container">
+        <h2 class="cta-banner__title">Pronto para tomar melhores decisões financeiras?</h2>
+        <p class="cta-banner__text">
+            Cria a tua conta gratuita em menos de um minuto e começa já o teu
+            primeiro cenário familiar.
+        </p>
+        <a class="btn btn--outline btn--lg" asp-controller="Auth" asp-action="Register">
+            Criar conta gratuita
+        </a>
+    </div>
+</section>

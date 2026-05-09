@@ -1,0 +1,130 @@
+@{
+    ViewData["Title"] = "Lançamentos";
+    ViewData["PageTitle"] = "Lançamentos financeiros";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "entries";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+
+    var entries = new[]
+    {
+        new { Type = "Rendimento", Category = "Salário", Amount = "1.250,00 €", Month = "Maio", Year = 2026, IsIncome = true },
+        new { Type = "Despesa",    Category = "Renda",   Amount = "525,00 €",   Month = "Maio", Year = 2026, IsIncome = false },
+        new { Type = "Despesa",    Category = "Alimentação", Amount = "210,00 €", Month = "Maio", Year = 2026, IsIncome = false },
+        new { Type = "Despesa",    Category = "Transportes", Amount = "65,00 €",  Month = "Maio", Year = 2026, IsIncome = false },
+        new { Type = "Rendimento", Category = "Mesada",  Amount = "60,00 €",   Month = "Maio", Year = 2026, IsIncome = true },
+        new { Type = "Despesa",    Category = "Lazer",   Amount = "85,00 €",   Month = "Maio", Year = 2026, IsIncome = false },
+        new { Type = "Despesa",    Category = "Saúde",   Amount = "32,00 €",   Month = "Abril", Year = 2026, IsIncome = false }
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Lançamentos financeiros</h1>
+        <p class="page-header__subtitle">Cenário ativo: <strong>Família Costa</strong></p>
+    </div>
+    <div class="page-header__actions">
+        <button class="btn btn--primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar lançamento
+        </button>
+    </div>
+</div>
+
+@* ===== Resumo rápido ===== *@
+<div class="grid grid--3 mb-6">
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">↑</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Rendimentos</div>
+            <div class="stat-card__value">1.310,00 €</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--danger">↓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Despesas</div>
+            <div class="stat-card__value">917,00 €</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon">€</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Saldo do mês</div>
+            <div class="stat-card__value">393,00 €</div>
+        </div>
+    </div>
+</div>
+
+@* ===== Filtros ===== *@
+<div class="filters-bar">
+    <span class="filters-bar__label">Filtrar por:</span>
+    <select class="filters-bar__select">
+        <option>Todos os tipos</option>
+        <option>Rendimentos</option>
+        <option>Despesas</option>
+    </select>
+    <select class="filters-bar__select">
+        <option>Todas as categorias</option>
+        <option>Salário</option>
+        <option>Renda</option>
+        <option>Alimentação</option>
+        <option>Transportes</option>
+        <option>Lazer</option>
+        <option>Saúde</option>
+    </select>
+    <select class="filters-bar__select">
+        <option>2026</option>
+        <option>2025</option>
+    </select>
+    <button class="btn btn--ghost btn--sm" style="margin-left: auto;">Limpar filtros</button>
+</div>
+
+@* ===== Tabela ===== *@
+<div class="table-wrapper">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Categoria</th>
+                    <th>Valor</th>
+                    <th>Mês</th>
+                    <th>Ano</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in entries)
+                {
+                    <tr>
+                        <td>
+                            @if (e.IsIncome)
+                            {
+                                <span class="badge badge--success badge--dot">@e.Type</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge--danger badge--dot">@e.Type</span>
+                            }
+                        </td>
+                        <td><strong>@e.Category</strong></td>
+                        <td style="font-weight: 600; color: @(e.IsIncome ? "var(--color-success)" : "var(--color-danger)");">
+                            @(e.IsIncome ? "+" : "−") @e.Amount
+                        </td>
+                        <td>@e.Month</td>
+                        <td>@e.Year</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn--ghost btn--sm">Editar</button>
+                            <button class="btn btn--ghost btn--sm text-danger"
+                                    data-confirm="Apagar este lançamento?">
+                                Apagar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

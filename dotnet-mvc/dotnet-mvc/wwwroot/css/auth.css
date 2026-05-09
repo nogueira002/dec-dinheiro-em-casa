@@ -1,0 +1,209 @@
+/* =============================================================
+   DEC – Dinheiro em Casa
+   Folha de estilos para área de autenticação (login/registo/recovery)
+   ============================================================= */
+
+/* Wrapper de página em duas colunas */
+.auth {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* Painel esquerdo (visual / branding) */
+.auth__visual {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: var(--color-white);
+    padding: var(--space-12);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Padrão decorativo no painel esquerdo */
+.auth__visual::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 50%;
+}
+
+.auth__visual::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.auth__visual-content {
+    position: relative;
+    z-index: 1;
+}
+
+.auth__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-white);
+    font-family: var(--font-headline);
+    font-weight: 900;
+    font-size: 1.4rem;
+    margin-bottom: var(--space-12);
+}
+
+.auth__brand-logo {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.auth__headline {
+    font-family: var(--font-headline);
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--color-white);
+    margin-bottom: var(--space-4);
+    max-width: 480px;
+}
+
+.auth__tagline {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 480px;
+}
+
+.auth__features {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+}
+
+.auth__feature {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.95rem;
+}
+
+.auth__feature-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+/* Painel direito (formulário) */
+.auth__form-panel {
+    background-color: var(--color-bg);
+    padding: var(--space-12) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth__form-wrapper {
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth__title {
+    font-family: var(--font-headline);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-dark);
+    margin-bottom: var(--space-2);
+}
+
+.auth__subtitle {
+    color: var(--color-gray-500);
+    margin-bottom: var(--space-8);
+}
+
+.auth__divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin: var(--space-6) 0;
+    color: var(--color-gray-400);
+    font-size: 0.85rem;
+}
+
+.auth__divider::before,
+.auth__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-gray-200);
+}
+
+.auth__footer-text {
+    text-align: center;
+    color: var(--color-gray-500);
+    font-size: 0.9rem;
+    margin-top: var(--space-6);
+}
+
+.auth__footer-text a {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* Link de recuperação alinhado à direita */
+.auth__forgot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -10px;
+    margin-bottom: var(--space-4);
+}
+
+.auth__forgot a {
+    font-size: 0.85rem;
+    color: var(--color-gray-600);
+}
+
+.auth__forgot a:hover {
+    color: var(--color-primary);
+}
+
+/* Responsivo */
+@media (max-width: 992px) {
+    .auth {
+        grid-template-columns: 1fr;
+    }
+
+    .auth__visual {
+        display: none;
+    }
+
+    .auth__form-panel {
+        padding: var(--space-8) var(--space-4);
+    }
+}

@@ -1,49 +1,84 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@*
+    Layout principal (público)
+    DEC – Dinheiro em Casa · ISTEC
+*@
+<!DOCTYPE html>
+<html lang="pt">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] - dotnet_mvc</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/dotnet_mvc.styles.css" asp-append-version="true"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · DEC – Dinheiro em Casa</title>
+    <meta name="description" content="DEC – Dinheiro em Casa: plataforma educativa de literacia financeira para alunos do ensino secundário." />
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">dotnet_mvc</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                </ul>
+<div class="app">
+
+    <header>
+        <nav class="navbar" role="navigation" aria-label="Navegação principal">
+            <div class="navbar__container">
+                <a class="navbar__brand" asp-controller="Home" asp-action="Index">
+                    <span class="navbar__logo" aria-hidden="true">DEC</span>
+                    <span>Dinheiro em Casa</span>
+                </a>
+
+                <button class="navbar__toggle"
+                        type="button"
+                        data-nav-toggle
+                        aria-expanded="false"
+                        aria-label="Abrir menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="3" y1="6"  x2="21" y2="6"  />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+
+                <div class="navbar__menu" data-nav-menu>
+                    <a class="navbar__link" asp-controller="Home" asp-action="Index">Início</a>
+                    <a class="navbar__link" href="#funcionalidades">Funcionalidades</a>
+                    <a class="navbar__link" href="#sobre">Sobre o projeto</a>
+
+                    <div class="navbar__actions">
+                        <a class="btn btn--ghost btn--sm" asp-controller="Auth" asp-action="Login">Entrar</a>
+                        <a class="btn btn--primary btn--sm" asp-controller="Auth" asp-action="Register">Criar conta</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </nav>
-</header>
-<div class="container">
-    <main role="main" class="pb-3">
+        </nav>
+    </header>
+
+    <main class="app__main" role="main">
         @RenderBody()
     </main>
+
+    <footer class="footer">
+        <div class="footer__container">
+            <div class="footer__brand">
+                <span class="navbar__logo" aria-hidden="true">DEC</span>
+                <div>
+                    <div>Dinheiro em Casa</div>
+                    <div class="text-sm text-muted fw-normal">ISTEC · Literacia Financeira</div>
+                </div>
+            </div>
+
+            <div class="footer__links">
+                <a class="footer__link" asp-controller="Home" asp-action="Index">Início</a>
+                <a class="footer__link" asp-controller="Auth" asp-action="Login">Entrar</a>
+                <a class="footer__link" asp-controller="Auth" asp-action="Register">Registo</a>
+                <a class="footer__link" asp-controller="Home" asp-action="Privacy">Privacidade</a>
+            </div>
+
+            <div class="footer__copyright">
+                &copy; @DateTime.Now.Year DEC – Dinheiro em Casa · ISTEC. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
+
 </div>
 
-<footer class="border-top footer text-muted">
-    <div class="container">
-        &copy; 2026 - dotnet_mvc - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-    </div>
-</footer>
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,0 +1,149 @@
+@{
+    ViewData["Title"] = "Monitorização";
+    ViewData["PageTitle"] = "Monitorização do sistema";
+    ViewData["Role"] = "Admin";
+    ViewData["ActiveMenu"] = "monitoring";
+    ViewData["UserName"] = "Administrador";
+    ViewData["UserRoleLabel"] = "Admin · ISTEC";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Monitorização</h1>
+        <p class="page-header__subtitle">Estado dos serviços e logs em tempo real.</p>
+    </div>
+    <div class="page-header__actions">
+        <button class="btn btn--outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Atualizar
+        </button>
+    </div>
+</div>
+
+@* ===== Estado dos serviços ===== *@
+<div class="grid grid--3 mb-8">
+
+    <article class="service-card">
+        <div class="service-card__header">
+            <div class="service-card__name">Portal (.NET)</div>
+            <span class="service-status service-status--online">
+                <span class="service-status__dot"></span>
+                Online
+            </span>
+        </div>
+        <p class="text-sm text-muted">Aplicação ASP.NET Core MVC</p>
+        <div class="service-card__metrics">
+            <div>
+                <div class="service-card__metric-label">Uptime</div>
+                <div class="service-card__metric-value">99.98%</div>
+            </div>
+            <div>
+                <div class="service-card__metric-label">Latência</div>
+                <div class="service-card__metric-value">42 ms</div>
+            </div>
+        </div>
+    </article>
+
+    <article class="service-card">
+        <div class="service-card__header">
+            <div class="service-card__name">API Django</div>
+            <span class="service-status service-status--online">
+                <span class="service-status__dot"></span>
+                Online
+            </span>
+        </div>
+        <p class="text-sm text-muted">Motor de simulações financeiras</p>
+        <div class="service-card__metrics">
+            <div>
+                <div class="service-card__metric-label">Uptime</div>
+                <div class="service-card__metric-value">99.95%</div>
+            </div>
+            <div>
+                <div class="service-card__metric-label">Latência</div>
+                <div class="service-card__metric-value">68 ms</div>
+            </div>
+        </div>
+    </article>
+
+    <article class="service-card">
+        <div class="service-card__header">
+            <div class="service-card__name">MySQL</div>
+            <span class="service-status service-status--warning">
+                <span class="service-status__dot"></span>
+                Degradado
+            </span>
+        </div>
+        <p class="text-sm text-muted">Base de dados principal</p>
+        <div class="service-card__metrics">
+            <div>
+                <div class="service-card__metric-label">Conexões</div>
+                <div class="service-card__metric-value">182 / 200</div>
+            </div>
+            <div>
+                <div class="service-card__metric-label">CPU</div>
+                <div class="service-card__metric-value">87%</div>
+            </div>
+        </div>
+    </article>
+
+</div>
+
+@* ===== Logs ===== *@
+<div class="card">
+    <div class="card__header">
+        <div>
+            <h2 class="card__title">Logs recentes</h2>
+            <p class="card__subtitle">Últimas 24 horas · agregado de todos os serviços</p>
+        </div>
+        <select class="filters-bar__select">
+            <option>Todos os níveis</option>
+            <option>Info</option>
+            <option>Warning</option>
+            <option>Error</option>
+        </select>
+    </div>
+
+    <div class="log-list">
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:32:18</span>
+            <span class="log-line__level log-line__level--ok">OK</span>
+            Portal · Sessão iniciada para utilizador #1284 (Aluno)
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:31:55</span>
+            <span class="log-line__level log-line__level--info">INFO</span>
+            Django API · Simulação calculada em 412ms para cenário #921
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:30:02</span>
+            <span class="log-line__level log-line__level--warn">WARN</span>
+            MySQL · Pool de conexões a 85% (170/200)
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:28:41</span>
+            <span class="log-line__level log-line__level--ok">OK</span>
+            Portal · Novo utilizador registado: bruno.a@escola.pt
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:25:13</span>
+            <span class="log-line__level log-line__level--info">INFO</span>
+            Django API · Health check respondido em 18ms
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:22:09</span>
+            <span class="log-line__level log-line__level--error">ERROR</span>
+            Portal · Falha no envio de email a maria.c@escola.pt (SMTP timeout)
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:18:34</span>
+            <span class="log-line__level log-line__level--ok">OK</span>
+            Portal · Backup automático concluído (4.2 GB)
+        </div>
+        <div class="log-line">
+            <span class="log-line__time">2026-05-09 14:15:01</span>
+            <span class="log-line__level log-line__level--info">INFO</span>
+            Sistema · Job agendado iniciado: limpeza de sessões expiradas
+        </div>
+    </div>
+</div>

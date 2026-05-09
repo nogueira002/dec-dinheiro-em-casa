@@ -1,0 +1,78 @@
+@{
+    ViewData["Title"] = "Turmas";
+    ViewData["PageTitle"] = "As tuas turmas";
+    ViewData["Role"] = "Professor";
+    ViewData["ActiveMenu"] = "classes";
+    ViewData["UserName"] = "Prof. Santos";
+    ViewData["UserRoleLabel"] = "Professor";
+    Layout = "_DashboardLayout";
+
+    var classes = new[]
+    {
+        new { Name = "11.º A · Economia",   Code = "DEC-11A2X", Students = 28, Active = 6 },
+        new { Name = "11.º B · Economia",   Code = "DEC-11B7P", Students = 26, Active = 4 },
+        new { Name = "12.º A · Economia C", Code = "DEC-12AX9", Students = 28, Active = 5 }
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Gerir turmas</h1>
+        <p class="page-header__subtitle">Cria turmas e partilha o código de adesão com os teus alunos.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateClass">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Criar turma
+        </a>
+    </div>
+</div>
+
+@if (classes.Length == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">👥</div>
+        <div class="empty-state__title">Ainda não tens turmas</div>
+        <p class="empty-state__text">Cria a primeira turma e partilha o código com os teus alunos.</p>
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateClass">Criar primeira turma</a>
+    </div>
+}
+else
+{
+    <div class="grid grid--auto-md">
+        @foreach (var c in classes)
+        {
+            <article class="class-card">
+                <div class="class-card__header">
+                    <div>
+                        <h3 class="class-card__title">@c.Name</h3>
+                        <p class="text-sm text-muted mt-1">@c.Students alunos inscritos</p>
+                    </div>
+                    <span class="badge badge--success badge--dot">Ativa</span>
+                </div>
+
+                <div>
+                    <p class="text-sm text-muted mb-2">Código de adesão</p>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <span class="join-code">@c.Code</span>
+                        <button class="btn btn--ghost btn--sm" data-copy="@c.Code" title="Copiar código">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="class-card__meta">
+                    <div class="class-card__row">
+                        <strong>@c.Active</strong> desafios ativos
+                    </div>
+                </div>
+
+                <div class="card__footer">
+                    <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+                    <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="CreateChallenge">Criar desafio</a>
+                </div>
+            </article>
+        }
+    </div>
+}

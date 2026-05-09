@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    ViewData["Role"] = "Professor";
+    ViewData["ActiveMenu"] = "dashboard";
+    ViewData["UserName"] = "Prof. Santos";
+    ViewData["UserRoleLabel"] = "Professor";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Bem-vindo, Prof. Santos 👋</h1>
+        <p class="page-header__subtitle">Aqui está um resumo das tuas turmas e atividades.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--outline" asp-controller="Professor" asp-action="CreateClass">Nova turma</a>
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateChallenge">Criar desafio</a>
+    </div>
+</div>
+
+@* ===== KPIs ===== *@
+<div class="grid grid--3 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Total de alunos</div>
+            <div class="stat-card__value">82</div>
+            <div class="stat-card__hint">3 turmas ativas</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">★</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Desafios ativos</div>
+            <div class="stat-card__value">7</div>
+            <div class="stat-card__hint">2 a expirar esta semana</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">⏱</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Submissões pendentes</div>
+            <div class="stat-card__value">14</div>
+            <div class="stat-card__hint">Por avaliar</div>
+        </div>
+    </div>
+</div>
+
+@* ===== Turmas + Atividade ===== *@
+<div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: var(--space-6);">
+
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">As tuas turmas</h2>
+                <p class="card__subtitle">3 turmas a teu cargo</p>
+            </div>
+            <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Classes">Ver todas →</a>
+        </div>
+
+        <div class="activity-list">
+            <div class="activity-item">
+                <div class="activity-item__icon">11A</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">11.º A · Economia</div>
+                    <div class="activity-item__meta">28 alunos · Código: <strong>DEC-11A2X</strong></div>
+                </div>
+                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item__icon">11B</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">11.º B · Economia</div>
+                    <div class="activity-item__meta">26 alunos · Código: <strong>DEC-11B7P</strong></div>
+                </div>
+                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item__icon">12A</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">12.º A · Economia C</div>
+                    <div class="activity-item__meta">28 alunos · Código: <strong>DEC-12AX9</strong></div>
+                </div>
+                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h2 class="card__title">Atividade recente</h2>
+        </div>
+
+        <div class="activity-list">
+            <div class="activity-item">
+                <div class="activity-item__icon" style="background: var(--color-success-light); color: var(--color-success);">✓</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Maria Costa submeteu "Crédito habitação"</div>
+                    <div class="activity-item__meta">há 12 minutos · 11.º A</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item__icon">+</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">João Pereira aderiu à turma 11.º B</div>
+                    <div class="activity-item__meta">há 2 horas</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item__icon" style="background: var(--color-warning-light); color: var(--color-warning);">!</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Desafio "Poupança 50/30/20" expira em 3 dias</div>
+                    <div class="activity-item__meta">15 alunos ainda não submeteram</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item__icon" style="background: var(--color-success-light); color: var(--color-success);">✓</div>
+                <div class="activity-item__body">
+                    <div class="activity-item__title">Avaliaste 5 submissões esta manhã</div>
+                    <div class="activity-item__meta">há 5 horas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

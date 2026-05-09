@@ -1,0 +1,113 @@
+@{
+    ViewData["Title"] = "Desafios";
+    ViewData["PageTitle"] = "Desafios";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "challenges";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+
+    var challenges = new[]
+    {
+        new { Title = "Aplicar a regra 50/30/20",
+              Description = "Cria um orçamento para a Família Costa aplicando a regra 50/30/20.",
+              Professor = "Prof. Santos",
+              Deadline = "18 de maio de 2026",
+              Status = "pending" },
+        new { Title = "Comparar créditos habitação",
+              Description = "Simula 3 cenários de crédito habitação e identifica o mais vantajoso.",
+              Professor = "Prof. Santos",
+              Deadline = "22 de maio de 2026",
+              Status = "submitted" },
+        new { Title = "Orçamento mensal de um estudante",
+              Description = "Constrói o orçamento de um estudante deslocado em Coimbra.",
+              Professor = "Prof. Santos",
+              Deadline = "10 de maio de 2026",
+              Status = "graded",
+              Grade = "18/20" }
+    };
+
+    string StatusBadge(string s) => s switch {
+        "pending"   => "<span class=\"badge badge--warning\">Pendente</span>",
+        "submitted" => "<span class=\"badge badge--info\">Submetido</span>",
+        "graded"    => "<span class=\"badge badge--success\">Avaliado</span>",
+        _ => ""
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Os teus desafios</h1>
+        <p class="page-header__subtitle">Atividades atribuídas pelos professores.</p>
+    </div>
+</div>
+
+@* ===== Filtros ===== *@
+<div class="filters-bar">
+    <span class="filters-bar__label">Estado:</span>
+    <select class="filters-bar__select">
+        <option>Todos</option>
+        <option>Pendentes</option>
+        <option>Submetidos</option>
+        <option>Avaliados</option>
+    </select>
+</div>
+
+@if (challenges.Length == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">🏆</div>
+        <div class="empty-state__title">Sem desafios atribuídos</div>
+        <p class="empty-state__text">
+            Quando o teu professor atribuir um desafio, ele aparece aqui.
+        </p>
+    </div>
+}
+else
+{
+    <div class="grid grid--auto-md">
+        @foreach (var c in challenges)
+        {
+            <article class="challenge-card">
+                <div class="challenge-card__header">
+                    <div>
+                        <h3 class="challenge-card__title">@c.Title</h3>
+                        <p class="text-sm text-muted mt-1">@c.Professor</p>
+                    </div>
+                    @Html.Raw(StatusBadge(c.Status))
+                </div>
+
+                <p class="text-sm" style="color: var(--color-gray-700);">@c.Description</p>
+
+                <div class="challenge-card__meta">
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Entrega: <strong>@c.Deadline</strong>
+                    </div>
+                    @if (c.Status == "graded")
+                    {
+                        <div class="scenario-card__row">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            Nota: <strong style="color: var(--color-success);">@c.Grade</strong>
+                        </div>
+                    }
+                </div>
+
+                <div class="card__footer">
+                    @if (c.Status == "pending")
+                    {
+                        <button class="btn btn--primary btn--sm">Submeter resposta</button>
+                    }
+                    else if (c.Status == "submitted")
+                    {
+                        <button class="btn btn--outline btn--sm">Ver submissão</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--outline btn--sm">Ver feedback</button>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+}

@@ -1,0 +1,83 @@
+@{
+    ViewData["Title"] = "Criar turma";
+    ViewData["PageTitle"] = "Criar turma";
+    ViewData["Role"] = "Professor";
+    ViewData["ActiveMenu"] = "create-class";
+    ViewData["UserName"] = "Prof. Santos";
+    ViewData["UserRoleLabel"] = "Professor";
+    Layout = "_DashboardLayout";
+
+    // placeholder do código de adesão (será gerado pelo backend)
+    var generatedCode = "DEC-" + Guid.NewGuid().ToString("N").Substring(0, 5).ToUpper();
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Criar nova turma</h1>
+        <p class="page-header__subtitle">Define o nome e partilha o código com os teus alunos.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Professor" asp-action="Classes">← Voltar</a>
+    </div>
+</div>
+
+<div style="max-width: 720px;">
+    <form asp-controller="Professor" asp-action="CreateClass" method="post" novalidate>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Identificação</h2>
+                    <p class="card__subtitle">Como queres chamar à turma?</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label form-label--required" for="ClassName">Nome da turma</label>
+                <input class="form-control"
+                       type="text"
+                       id="ClassName"
+                       name="ClassName"
+                       placeholder="Ex.: 11.º A · Economia"
+                       required />
+                <span class="form-hint">Inclui ano, turma e disciplina para facilitar a identificação.</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="Description">Descrição (opcional)</label>
+                <textarea class="form-textarea"
+                          id="Description"
+                          name="Description"
+                          placeholder="Notas sobre o ano letivo, objetivos, etc."></textarea>
+            </div>
+        </div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Código de adesão</h2>
+                    <p class="card__subtitle">Vai ser gerado automaticamente após criares a turma.</p>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background-color: var(--color-primary-light); border-radius: var(--radius-md);">
+                <span class="join-code" style="font-size: 1.2rem;">@generatedCode</span>
+                <span class="text-sm text-muted">(pré-visualização)</span>
+            </div>
+
+            <div class="alert alert--info mt-4">
+                <span>💡</span>
+                <div>
+                    Os teus alunos usarão este código para se inscreverem na
+                    turma. Podes regenerá-lo a qualquer momento se for necessário.
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Criar turma</button>
+            <a class="btn btn--ghost" asp-controller="Professor" asp-action="Classes">Cancelar</a>
+        </div>
+
+    </form>
+</div>

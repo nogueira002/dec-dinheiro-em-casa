@@ -1,0 +1,61 @@
+@*
+    Layout de autenticação — centrado, sem navbar/footer
+    Usar em Login, Register, ForgotPassword
+*@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · DEC – Dinheiro em Casa</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body>
+<div class="auth">
+
+    @* Painel esquerdo · branding *@
+    <aside class="auth__visual">
+        <div class="auth__visual-content">
+            <a class="auth__brand" asp-controller="Home" asp-action="Index">
+                <span class="auth__brand-logo">DEC</span>
+                <span>Dinheiro em Casa</span>
+            </a>
+
+            <h1 class="auth__headline">Aprende a gerir o teu dinheiro de forma simples e prática.</h1>
+            <p class="auth__tagline">
+                Plataforma educativa de literacia financeira para alunos do
+                ensino secundário. Cria cenários, simula decisões e domina a
+                tua economia pessoal.
+            </p>
+        </div>
+
+        <ul class="auth__features">
+            <li class="auth__feature">
+                <span class="auth__feature-icon">✓</span>
+                Cenários familiares realistas
+            </li>
+            <li class="auth__feature">
+                <span class="auth__feature-icon">✓</span>
+                Simulações financeiras passo-a-passo
+            </li>
+            <li class="auth__feature">
+                <span class="auth__feature-icon">✓</span>
+                Desafios e acompanhamento do professor
+            </li>
+        </ul>
+    </aside>
+
+    @* Painel direito · formulário *@
+    <section class="auth__form-panel">
+        <div class="auth__form-wrapper fade-in">
+            @RenderBody()
+        </div>
+    </section>
+
+</div>
+
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

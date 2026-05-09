@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Simulações";
+    ViewData["PageTitle"] = "Simulações financeiras";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "simulations";
+    ViewData["UserName"] = "Maria Costa";
+    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Simulações financeiras</h1>
+        <p class="page-header__subtitle">Compara estratégias e descobre o impacto a longo prazo.</p>
+    </div>
+</div>
+
+<div class="grid" style="grid-template-columns: 1fr 2fr; gap: var(--space-6);">
+
+    @* ===== Formulário de simulação ===== *@
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Parâmetros</h2>
+                <p class="card__subtitle">Define a tua simulação</p>
+            </div>
+        </div>
+
+        <form>
+            <div class="form-group">
+                <label class="form-label" for="Scenario">Cenário</label>
+                <select class="form-select" id="Scenario" name="Scenario">
+                    <option>Família Costa</option>
+                    <option>Estudante em Coimbra</option>
+                    <option>A Joana</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="Months">Período (meses)</label>
+                <input class="form-control" type="number" id="Months" name="Months" min="3" max="120" value="24" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Estratégia</label>
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <label class="option-card">
+                        <input type="radio" name="Strategy" value="conservadora" />
+                        <div class="option-card__title">🛡️ Conservadora</div>
+                        <div class="option-card__desc">Risco baixo · retorno previsível</div>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="Strategy" value="moderada" checked />
+                        <div class="option-card__title">⚖️ Moderada</div>
+                        <div class="option-card__desc">Equilíbrio entre risco e retorno</div>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="Strategy" value="agressiva" />
+                        <div class="option-card__title">🚀 Agressiva</div>
+                        <div class="option-card__desc">Risco alto · retorno potencial elevado</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary btn--block">
+                    Calcular simulação
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @* ===== Resultados ===== *@
+    <div>
+        <div class="grid grid--2 mb-6">
+            <div class="result-card">
+                <div class="result-card__label">Valor final estimado</div>
+                <div class="result-card__value">14.250,00 €</div>
+                <div class="result-card__hint">após 24 meses</div>
+            </div>
+            <div class="result-card result-card--neutral">
+                <div class="result-card__label">Taxa de esforço</div>
+                <div class="result-card__value text-primary">28%</div>
+                <div class="result-card__hint">Saudável (limite 40%)</div>
+            </div>
+            <div class="result-card result-card--neutral">
+                <div class="result-card__label">Break-even</div>
+                <div class="result-card__value">9 meses</div>
+                <div class="result-card__hint">Tempo até recuperar o investimento</div>
+            </div>
+            <div class="result-card result-card--neutral">
+                <div class="result-card__label">Custo do crédito</div>
+                <div class="result-card__value">1.840,50 €</div>
+                <div class="result-card__hint">Juros pagos no período</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card__header">
+                <h2 class="card__title">Projeção de evolução</h2>
+                <span class="badge badge--info">Estratégia moderada</span>
+            </div>
+
+            <div class="chart-placeholder">
+                <svg class="chart-placeholder__line" viewBox="0 0 600 240" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="simGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#2da7df" stop-opacity="0.4"/>
+                            <stop offset="100%" stop-color="#2da7df" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,200 Q100,180 150,160 T300,110 T450,70 T600,40 L600,240 L0,240 Z"
+                          fill="url(#simGrad)" />
+                    <path d="M0,200 Q100,180 150,160 T300,110 T450,70 T600,40"
+                          stroke="#0C73B7" stroke-width="3" fill="none" stroke-linecap="round" />
+                </svg>
+                <div class="chart-placeholder__label">Crescimento estimado de 142% em 24 meses</div>
+            </div>
+
+            <div class="alert alert--info mt-6">
+                <span>💡</span>
+                <div>
+                    <strong>Sugestão:</strong> Com a estratégia moderada, conseguirias
+                    atingir o teu objetivo de poupança 4 meses mais cedo se aumentasses
+                    em 10% a quota mensal.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

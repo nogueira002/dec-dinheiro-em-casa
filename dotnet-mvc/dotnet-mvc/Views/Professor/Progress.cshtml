@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Progresso";
+    ViewData["PageTitle"] = "Progresso dos alunos";
+    ViewData["Role"] = "Professor";
+    ViewData["ActiveMenu"] = "progress";
+    ViewData["UserName"] = "Prof. Santos";
+    ViewData["UserRoleLabel"] = "Professor";
+    Layout = "_DashboardLayout";
+
+    var students = new[]
+    {
+        new { Name = "Maria Costa",    Class = "11.º A", Scenarios = 3, Simulations = 8, Done = 6, Total = 7 },
+        new { Name = "João Pereira",   Class = "11.º A", Scenarios = 2, Simulations = 5, Done = 4, Total = 7 },
+        new { Name = "Ana Lopes",      Class = "11.º A", Scenarios = 4, Simulations = 12, Done = 7, Total = 7 },
+        new { Name = "Tiago Marques",  Class = "12.º A", Scenarios = 1, Simulations = 2, Done = 1, Total = 6 },
+        new { Name = "Sofia Ribeiro",  Class = "11.º A", Scenarios = 3, Simulations = 6, Done = 5, Total = 7 },
+        new { Name = "Bruno Almeida",  Class = "11.º B", Scenarios = 2, Simulations = 4, Done = 3, Total = 6 }
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Progresso dos alunos</h1>
+        <p class="page-header__subtitle">Vista geral da atividade e desempenho.</p>
+    </div>
+    <div class="page-header__actions">
+        <button class="btn btn--outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar CSV
+        </button>
+    </div>
+</div>
+
+<div class="filters-bar">
+    <span class="filters-bar__label">Turma:</span>
+    <select class="filters-bar__select">
+        <option>Todas</option>
+        <option>11.º A</option>
+        <option>11.º B</option>
+        <option>12.º A</option>
+    </select>
+    <select class="filters-bar__select">
+        <option>Ordenar por: Nome</option>
+        <option>Ordenar por: Progresso</option>
+        <option>Ordenar por: Atividade</option>
+    </select>
+</div>
+
+<div class="table-wrapper">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Aluno</th>
+                    <th>Turma</th>
+                    <th>Cenários</th>
+                    <th>Simulações</th>
+                    <th>Desafios concluídos</th>
+                    <th>Progresso</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var st in students)
+                {
+                    var pct = (int)Math.Round((double)st.Done / st.Total * 100);
+                    var pctCls = pct >= 80 ? "progress__bar--success" : (pct < 40 ? "progress__bar--danger" : "progress__bar--warning");
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                    @st.Name[0]
+                                </div>
+                                <strong>@st.Name</strong>
+                            </div>
+                        </td>
+                        <td>@st.Class</td>
+                        <td><span class="badge badge--neutral">@st.Scenarios</span></td>
+                        <td><span class="badge badge--neutral">@st.Simulations</span></td>
+                        <td><span class="badge badge--neutral">@st.Done / @st.Total</span></td>
+                        <td style="min-width: 200px;">
+                            <div class="progress-label">
+                                <span class="text-sm fw-medium">@pct%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress__bar @pctCls" style="width: @pct%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
