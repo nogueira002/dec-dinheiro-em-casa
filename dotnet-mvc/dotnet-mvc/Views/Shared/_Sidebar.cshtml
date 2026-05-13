@@ -1,3 +1,7 @@
+@using System.Security.Claims
+@using dotnet_mvc.Extensions
+@using dotnet_mvc.Security
+
 @*
     Partial da sidebar para áreas autenticadas
     Variáveis (via ViewData):
@@ -6,10 +10,15 @@
       - "UserName" / "UserRoleLabel": opcional para o footer
 *@
 @{
-    var role = (ViewData["Role"] as string) ?? "Student";
+    var currentRole = Context.User.FindFirstValue(ClaimTypes.Role);
+    var role = (ViewData["Role"] as string) ?? UserRoles.Normalize(currentRole);
     var active = (ViewData["ActiveMenu"] as string) ?? "";
-    var userName = (ViewData["UserName"] as string) ?? "Utilizador";
-    var userRoleLabel = (ViewData["UserRoleLabel"] as string) ?? role;
+    var userName = Context.User.Identity?.IsAuthenticated == true
+        ? Context.User.GetDisplayName()
+        : (ViewData["UserName"] as string) ?? "Utilizador";
+    var userRoleLabel = Context.User.Identity?.IsAuthenticated == true
+        ? Context.User.GetRoleLabel()
+        : (ViewData["UserRoleLabel"] as string) ?? UserRoles.ToDisplayLabel(role);
 
     string Cls(string id) => active == id ? "sidebar__link sidebar__link--active" : "sidebar__link";
 }
@@ -120,16 +129,19 @@
             <div class="sidebar__user-name">@userName</div>
             <div class="sidebar__user-role">@userRoleLabel</div>
         </div>
-        <a class="sidebar__logout"
-           asp-controller="Auth" asp-action="Logout"
-           data-confirm="Queres mesmo terminar a sessão?"
-           title="Sair">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-        </a>
+        <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar__logout-form">
+            <button type="submit"
+                    class="sidebar__logout"
+                    data-confirm="Queres mesmo terminar a sessão?"
+                    title="Sair"
+                    aria-label="Terminar sessão">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </form>
     </div>
 </aside>
 

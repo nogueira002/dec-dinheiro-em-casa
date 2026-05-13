@@ -10,21 +10,25 @@
     var challenges = new[]
     {
         new { Title = "Aplicar a regra 50/30/20",
-              Description = "Cria um orçamento para a Família Costa aplicando a regra 50/30/20.",
-              Professor = "Prof. Santos",
-              Deadline = "18 de maio de 2026",
-              Status = "pending" },
+            Description = "Cria um orçamento para a Família Costa aplicando a regra 50/30/20.",
+            Professor = "Prof. Santos",
+            Deadline = "18 de maio de 2026",
+            Status = "pending",
+            Grade = "" },
+
         new { Title = "Comparar créditos habitação",
-              Description = "Simula 3 cenários de crédito habitação e identifica o mais vantajoso.",
-              Professor = "Prof. Santos",
-              Deadline = "22 de maio de 2026",
-              Status = "submitted" },
+            Description = "Simula 3 cenários de crédito habitação e identifica o mais vantajoso.",
+            Professor = "Prof. Santos",
+            Deadline = "22 de maio de 2026",
+            Status = "submitted",
+            Grade = "" },
+
         new { Title = "Orçamento mensal de um estudante",
-              Description = "Constrói o orçamento de um estudante deslocado em Coimbra.",
-              Professor = "Prof. Santos",
-              Deadline = "10 de maio de 2026",
-              Status = "graded",
-              Grade = "18/20" }
+            Description = "Constrói o orçamento de um estudante deslocado em Coimbra.",
+            Professor = "Prof. Santos",
+            Deadline = "10 de maio de 2026",
+            Status = "graded",
+            Grade = "18/20" }
     };
 
     string StatusBadge(string s) => s switch {

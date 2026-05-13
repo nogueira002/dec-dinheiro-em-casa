@@ -15,4 +15,8 @@ public class User
 
     public string Role { get; set; } = "Student";
     public string UserStatus { get; set; } = "Active";
+
+    public string? SessionTokenHash { get; set; }
+    public DateTime? SessionExpiresAtUtc { get; set; }
+    public DateTime? LastLoginAtUtc { get; set; }
 }

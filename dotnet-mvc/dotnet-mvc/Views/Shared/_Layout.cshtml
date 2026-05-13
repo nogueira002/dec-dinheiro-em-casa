@@ -42,8 +42,30 @@
                     <a class="navbar__link" href="#sobre">Sobre o projeto</a>
 
                     <div class="navbar__actions">
-                        <a class="btn btn--ghost btn--sm" asp-controller="Auth" asp-action="Login">Entrar</a>
-                        <a class="btn btn--primary btn--sm" asp-controller="Auth" asp-action="Register">Criar conta</a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            if (User.IsInRole("Admin"))
+                            {
+                                <a class="btn btn--ghost btn--sm" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                            }
+                            else if (User.IsInRole("Professor"))
+                            {
+                                <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Dashboard">Dashboard</a>
+                            }
+                            else
+                            {
+                                <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Dashboard">Dashboard</a>
+                            }
+
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
+                                <button type="submit" class="btn btn--primary btn--sm">Sair</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="btn btn--ghost btn--sm" asp-controller="Auth" asp-action="Login">Entrar</a>
+                            <a class="btn btn--primary btn--sm" asp-controller="Auth" asp-action="Register">Criar conta</a>
+                        }
                     </div>
                 </div>
             </div>
@@ -66,8 +88,26 @@
 
             <div class="footer__links">
                 <a class="footer__link" asp-controller="Home" asp-action="Index">Início</a>
-                <a class="footer__link" asp-controller="Auth" asp-action="Login">Entrar</a>
-                <a class="footer__link" asp-controller="Auth" asp-action="Register">Registo</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    if (User.IsInRole("Admin"))
+                    {
+                        <a class="footer__link" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                    }
+                    else if (User.IsInRole("Professor"))
+                    {
+                        <a class="footer__link" asp-controller="Professor" asp-action="Dashboard">Dashboard</a>
+                    }
+                    else
+                    {
+                        <a class="footer__link" asp-controller="Student" asp-action="Dashboard">Dashboard</a>
+                    }
+                }
+                else
+                {
+                    <a class="footer__link" asp-controller="Auth" asp-action="Login">Entrar</a>
+                    <a class="footer__link" asp-controller="Auth" asp-action="Register">Registo</a>
+                }
                 <a class="footer__link" asp-controller="Home" asp-action="Privacy">Privacidade</a>
             </div>
 

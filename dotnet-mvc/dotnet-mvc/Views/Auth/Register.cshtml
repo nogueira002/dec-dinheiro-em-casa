@@ -1,3 +1,5 @@
+@model RegisterViewModel
+
 @{
     ViewData["Title"] = "Criar conta";
     Layout = "_AuthLayout";
@@ -7,75 +9,74 @@
 <p class="auth__subtitle">É gratuito e leva menos de um minuto.</p>
 
 <form asp-controller="Auth" asp-action="Register" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
     <div class="form-group">
-        <label class="form-label form-label--required" for="Name">Nome completo</label>
-        <input class="form-control"
-               type="text"
-               id="Name"
-               name="Name"
+        <label asp-for="Name" class="form-label form-label--required"></label>
+        <input asp-for="Name"
+               class="form-control"
                placeholder="Ex.: Maria Costa"
                autocomplete="name"
                required />
+        <span asp-validation-for="Name" class="field-validation-error"></span>
     </div>
 
     <div class="form-group">
-        <label class="form-label form-label--required" for="Email">Email</label>
-        <input class="form-control"
-               type="email"
-               id="Email"
-               name="Email"
+        <label asp-for="Email" class="form-label form-label--required"></label>
+        <input asp-for="Email"
+               class="form-control"
                placeholder="exemplo@escola.pt"
                autocomplete="email"
                required />
+        <span asp-validation-for="Email" class="field-validation-error"></span>
     </div>
 
     <div class="form-row">
         <div class="form-group">
-            <label class="form-label form-label--required" for="Password">Password</label>
-            <input class="form-control"
-                   type="password"
-                   id="Password"
-                   name="Password"
+            <label asp-for="Password" class="form-label form-label--required"></label>
+            <input asp-for="Password"
+                   class="form-control"
                    placeholder="Mínimo 8 caracteres"
                    autocomplete="new-password"
                    required />
+            <span asp-validation-for="Password" class="field-validation-error"></span>
         </div>
 
         <div class="form-group">
-            <label class="form-label form-label--required" for="ConfirmPassword">Confirmar</label>
-            <input class="form-control"
-                   type="password"
-                   id="ConfirmPassword"
-                   name="ConfirmPassword"
+            <label asp-for="ConfirmPassword" class="form-label form-label--required"></label>
+            <input asp-for="ConfirmPassword"
+                   class="form-control"
                    placeholder="Repete a password"
                    autocomplete="new-password"
                    required />
+            <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
         </div>
     </div>
 
     <div class="form-group">
-        <label class="form-label form-label--required">Sou…</label>
+        <label asp-for="Role" class="form-label form-label--required">Sou…</label>
         <div class="option-cards">
             <label class="option-card">
-                <input type="radio" name="Role" value="Student" checked />
+                <input asp-for="Role" type="radio" value="Student" />
                 <div class="option-card__title">Aluno</div>
                 <div class="option-card__desc">Quero aprender e fazer cenários</div>
             </label>
             <label class="option-card">
-                <input type="radio" name="Role" value="Professor" />
+                <input asp-for="Role" type="radio" value="Professor" />
                 <div class="option-card__title">Professor</div>
                 <div class="option-card__desc">Quero gerir turmas e desafios</div>
             </label>
         </div>
+        <span asp-validation-for="Role" class="field-validation-error"></span>
     </div>
 
     <div class="form-check">
-        <input type="checkbox" id="Terms" name="Terms" required />
-        <label for="Terms">
+        <input asp-for="Terms" />
+        <label asp-for="Terms">
             Aceito os <a href="#">termos de utilização</a> e a
             <a asp-controller="Home" asp-action="Privacy">política de privacidade</a>.
         </label>
+        <span asp-validation-for="Terms" class="field-validation-error"></span>
     </div>
 
     <div class="form-actions">
@@ -89,3 +90,7 @@
     Já tens conta?
     <a asp-controller="Auth" asp-action="Login">Entrar</a>
 </p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

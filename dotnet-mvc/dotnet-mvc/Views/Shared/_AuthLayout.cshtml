@@ -49,6 +49,16 @@
     @* Painel direito · formulário *@
     <section class="auth__form-panel">
         <div class="auth__form-wrapper fade-in">
+            @if (TempData["StatusMessage"] is string statusMessage)
+            {
+                var statusType = TempData["StatusType"] as string ?? "info";
+                <div class="alert alert--@statusType" data-auto-dismiss="5000">
+                    <span>@(statusType == "success" ? "✓" : "ℹ")</span>
+                    <div>@statusMessage</div>
+                    <button type="button" class="alert__close" data-alert-close aria-label="Fechar">×</button>
+                </div>
+            }
+
             @RenderBody()
         </div>
     </section>

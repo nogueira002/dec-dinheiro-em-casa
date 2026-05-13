@@ -6,7 +6,7 @@ Este projeto é o backend principal da plataforma **DEC**, responsável por geri
 
 ## 🚀 Tecnologias
 
-* .NET 9 (MVC)
+* .NET 8 (MVC)
 * Entity Framework Core
 * MySQL (via Docker)
 * Docker Compose
@@ -31,7 +31,7 @@ dotnet-mvc/
 
 ## ⚙️ Pré-requisitos
 
-* .NET SDK 9
+* .NET SDK 8
 * Docker
 * Docker Compose
 

@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Acesso negado";
+    Layout = "_AuthLayout";
+}
+
+<div class="text-center">
+    <div class="empty-state__icon" style="margin-bottom: 1.5rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+    </div>
+    <h1 class="auth__title">Acesso negado</h1>
+    <p class="auth__subtitle">
+        Não tens permissões para aceder a esta área. Entra com uma conta autorizada
+        ou volta à página inicial.
+    </p>
+
+    <div class="form-actions">
+        <a class="btn btn--ghost btn--lg" asp-controller="Home" asp-action="Index">Ir para o início</a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <form asp-controller="Auth" asp-action="Logout" method="post" class="inline-form">
+                <button type="submit" class="btn btn--primary btn--lg">Terminar sessão</button>
+            </form>
+        }
+        else
+        {
+            <a class="btn btn--primary btn--lg" asp-controller="Auth" asp-action="Login">Entrar com outra conta</a>
+        }
+    </div>
+</div>

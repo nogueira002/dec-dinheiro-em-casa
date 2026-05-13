@@ -134,6 +134,10 @@
     max-width: 440px;
 }
 
+.auth__form-wrapper .alert {
+    margin-bottom: var(--space-6);
+}
+
 .auth__title {
     font-family: var(--font-headline);
     font-size: 2rem;

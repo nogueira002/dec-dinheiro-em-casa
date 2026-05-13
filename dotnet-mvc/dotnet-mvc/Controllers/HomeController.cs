@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using dotnet_mvc.Models;
+using dotnet_mvc.Security;
 
 namespace dotnet_mvc.Controllers;
 
@@ -15,6 +16,12 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var route = UserRoles.GetDefaultRoute(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value);
+            return RedirectToAction(route.Action, route.Controller);
+        }
+
         return View();
     }
 
