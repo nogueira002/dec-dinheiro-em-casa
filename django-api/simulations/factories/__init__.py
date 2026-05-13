@@ -1,0 +1,3 @@
+from simulations.factories.fabrica_estudante import FabricaEstudante
+from simulations.factories.fabrica_familia_monoparental import FabricaFamiliaMonoparental
+from simulations.factories.fabrica_casal import FabricaCasal

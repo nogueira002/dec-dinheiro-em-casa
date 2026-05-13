@@ -1,0 +1,3 @@
+from simulations.strategies.estrategia_conservadora import EstragiaConservadora
+from simulations.strategies.estrategia_moderada import EstrategiaModerada
+from simulations.strategies.estrategia_agressiva import EstragiaAgressiva
