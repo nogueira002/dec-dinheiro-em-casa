@@ -1,58 +1,55 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-import json
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
+from simulations.serializers import SimulateSerializer, ScenarioSerializer
 from simulations.strategies import ConservativeStrategy, ModerateStrategy, AggressiveStrategy
 from simulations.factories import StudentFactory, SingleParentFactory, CoupleFactory
 
 
-@require_http_methods(["GET"])
+@api_view(['GET'])
 def health_check(request):
-    return JsonResponse({
+    return Response({
         "status": "ok",
         "service": "django-api",
         "version": "1.0.0"
     })
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
+@api_view(['POST'])
 def simulate(request):
-    try:
-        data = json.loads(request.body)
-        strategy_type = data.get('strategy', 'moderate')
+    serializer = SimulateSerializer(data=request.data)
 
-        if strategy_type == 'conservative':
-            strategy = ConservativeStrategy()
-        elif strategy_type == 'aggressive':
-            strategy = AggressiveStrategy()
-        else:
-            strategy = ModerateStrategy()
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
 
-        result = strategy.simulate(data)
-        return JsonResponse(result)
+    strategy_type = serializer.validated_data['strategy']
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+    if strategy_type == 'conservative':
+        strategy = ConservativeStrategy()
+    elif strategy_type == 'aggressive':
+        strategy = AggressiveStrategy()
+    else:
+        strategy = ModerateStrategy()
+
+    result = strategy.simulate(request.data)
+    return Response(result)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
+@api_view(['POST'])
 def create_scenario(request):
-    try:
-        data = json.loads(request.body)
-        scenario_type = data.get('type', 'student')
+    serializer = ScenarioSerializer(data=request.data)
 
-        if scenario_type == 'couple':
-            factory = CoupleFactory()
-        elif scenario_type == 'single_parent':
-            factory = SingleParentFactory()
-        else:
-            factory = StudentFactory()
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
 
-        result = factory.create_scenario(data)
-        return JsonResponse(result)
+    scenario_type = serializer.validated_data['type']
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+    if scenario_type == 'couple':
+        factory = CoupleFactory()
+    elif scenario_type == 'single_parent':
+        factory = SingleParentFactory()
+    else:
+        factory = StudentFactory()
+
+    result = factory.create_scenario(request.data)
+    return Response(result)
