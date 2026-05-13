@@ -3,16 +3,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 
-from simulations.strategies import (
-    EstragiaConservadora,
-    EstrategiaModerada,
-    EstragiaAgressiva
-)
-from simulations.factories import (
-    FabricaEstudante,
-    FabricaFamiliaMonoparental,
-    FabricaCasal
-)
+from simulations.strategies import ConservativeStrategy, ModerateStrategy, AggressiveStrategy
+from simulations.factories import StudentFactory, SingleParentFactory, CoupleFactory
+
 
 @require_http_methods(["GET"])
 def health_check(request):
@@ -22,42 +15,44 @@ def health_check(request):
         "version": "1.0.0"
     })
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def simular(request):
-    try:
-        dados = json.loads(request.body)
-        tipo = dados.get('estrategia', 'moderada')
-
-        if tipo == 'conservadora':
-            strategy = EstragiaConservadora()
-        elif tipo == 'agressiva':
-            strategy = EstragiaAgressiva()
-        else:
-            strategy = EstrategiaModerada()
-
-        resultado = strategy.simular(dados)
-        return JsonResponse(resultado)
-
-    except Exception as e:
-        return JsonResponse({"erro": str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def criar_cenario(request):
+def simulate(request):
     try:
-        dados = json.loads(request.body)
-        tipo = dados.get('tipo', 'estudante')
+        data = json.loads(request.body)
+        strategy_type = data.get('strategy', 'moderate')
 
-        if tipo == 'casal':
-            factory = FabricaCasal()
-        elif tipo == 'familia_monoparental':
-            factory = FabricaFamiliaMonoparental()
+        if strategy_type == 'conservative':
+            strategy = ConservativeStrategy()
+        elif strategy_type == 'aggressive':
+            strategy = AggressiveStrategy()
         else:
-            factory = FabricaEstudante()
+            strategy = ModerateStrategy()
 
-        resultado = factory.criar_cenario(dados)
-        return JsonResponse(resultado)
+        result = strategy.simulate(data)
+        return JsonResponse(result)
 
     except Exception as e:
-        return JsonResponse({"erro": str(e)}, status=400)
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_scenario(request):
+    try:
+        data = json.loads(request.body)
+        scenario_type = data.get('type', 'student')
+
+        if scenario_type == 'couple':
+            factory = CoupleFactory()
+        elif scenario_type == 'single_parent':
+            factory = SingleParentFactory()
+        else:
+            factory = StudentFactory()
+
+        result = factory.create_scenario(data)
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

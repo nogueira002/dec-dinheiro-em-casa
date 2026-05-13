@@ -1,3 +1,3 @@
-from simulations.strategies.estrategia_conservadora import EstragiaConservadora
-from simulations.strategies.estrategia_moderada import EstrategiaModerada
-from simulations.strategies.estrategia_agressiva import EstragiaAgressiva
+from simulations.strategies.conservative_strategy import ConservativeStrategy
+from simulations.strategies.moderate_strategy import ModerateStrategy
+from simulations.strategies.aggressive_strategy import AggressiveStrategy
