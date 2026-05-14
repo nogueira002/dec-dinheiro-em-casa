@@ -1,4 +1,8 @@
+import logging
 from simulations.factories.base_factory import BaseFactory
+
+logger = logging.getLogger(__name__)
+
 
 class StudentFactory(BaseFactory):
     """
@@ -7,8 +11,11 @@ class StudentFactory(BaseFactory):
     """
 
     def create_scenario(self, data: dict) -> dict:
+        logger.debug("StudentFactory.create_scenario called — data: %s", data)
         # TODO: implement logic in Sprint C
-        return {
+        result = {
             "type": "student",
             "status": "not_implemented"
         }
+        logger.info("StudentFactory result: %s", result)
+        return result

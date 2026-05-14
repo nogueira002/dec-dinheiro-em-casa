@@ -1,4 +1,8 @@
+import logging
 from simulations.strategies.base_strategy import BaseStrategy
+
+logger = logging.getLogger(__name__)
+
 
 class ConservativeStrategy(BaseStrategy):
     """
@@ -7,8 +11,11 @@ class ConservativeStrategy(BaseStrategy):
     """
 
     def simulate(self, data: dict) -> dict:
+        logger.debug("ConservativeStrategy.simulate called — data: %s", data)
         # TODO: implement conservative logic in Sprint C
-        return {
+        result = {
             "strategy": "conservative",
             "status": "not_implemented"
         }
+        logger.info("ConservativeStrategy result: %s", result)
+        return result
