@@ -1,14 +1,11 @@
+@model dotnet_mvc.ViewModels.Professor.CreateClassViewModel
+
 @{
     ViewData["Title"] = "Criar turma";
     ViewData["PageTitle"] = "Criar turma";
     ViewData["Role"] = "Professor";
     ViewData["ActiveMenu"] = "create-class";
-    ViewData["UserName"] = "Prof. Santos";
-    ViewData["UserRoleLabel"] = "Professor";
     Layout = "_DashboardLayout";
-
-    // placeholder do código de adesão (será gerado pelo backend)
-    var generatedCode = "DEC-" + Guid.NewGuid().ToString("N").Substring(0, 5).ToUpper();
 }
 
 <div class="page-header">
@@ -23,6 +20,9 @@
 
 <div style="max-width: 720px;">
     <form asp-controller="Professor" asp-action="CreateClass" method="post" novalidate>
+        <input asp-for="GeneratedCodePreview" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
         <div class="card mb-6">
             <div class="card__header">
@@ -33,22 +33,21 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label form-label--required" for="ClassName">Nome da turma</label>
-                <input class="form-control"
-                       type="text"
-                       id="ClassName"
-                       name="ClassName"
+                <label asp-for="ClassName" class="form-label form-label--required"></label>
+                <input asp-for="ClassName"
+                       class="form-control"
                        placeholder="Ex.: 11.º A · Economia"
                        required />
+                <span asp-validation-for="ClassName" class="field-validation-error"></span>
                 <span class="form-hint">Inclui ano, turma e disciplina para facilitar a identificação.</span>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="Description">Descrição (opcional)</label>
-                <textarea class="form-textarea"
-                          id="Description"
-                          name="Description"
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description"
+                          class="form-textarea"
                           placeholder="Notas sobre o ano letivo, objetivos, etc."></textarea>
+                <span asp-validation-for="Description" class="field-validation-error"></span>
             </div>
         </div>
 
@@ -61,7 +60,7 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background-color: var(--color-primary-light); border-radius: var(--radius-md);">
-                <span class="join-code" style="font-size: 1.2rem;">@generatedCode</span>
+                <span class="join-code" style="font-size: 1.2rem;">@Model.GeneratedCodePreview</span>
                 <span class="text-sm text-muted">(pré-visualização)</span>
             </div>
 
@@ -78,6 +77,9 @@
             <button type="submit" class="btn btn--primary btn--lg">Criar turma</button>
             <a class="btn btn--ghost" asp-controller="Professor" asp-action="Classes">Cancelar</a>
         </div>
-
     </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

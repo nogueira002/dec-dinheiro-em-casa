@@ -1,93 +1,98 @@
-@{
-    ViewData["Title"] = "Progresso";
-    ViewData["PageTitle"] = "Progresso dos alunos";
-    ViewData["Role"] = "Professor";
-    ViewData["ActiveMenu"] = "progress";
-    ViewData["UserName"] = "Prof. Santos";
-    ViewData["UserRoleLabel"] = "Professor";
-    Layout = "_DashboardLayout";
+@model dotnet_mvc.ViewModels.Professor.ProfessorStudentsIndexViewModel
 
-    var students = new[]
-    {
-        new { Name = "Maria Costa",    Class = "11.º A", Scenarios = 3, Simulations = 8, Done = 6, Total = 7 },
-        new { Name = "João Pereira",   Class = "11.º A", Scenarios = 2, Simulations = 5, Done = 4, Total = 7 },
-        new { Name = "Ana Lopes",      Class = "11.º A", Scenarios = 4, Simulations = 12, Done = 7, Total = 7 },
-        new { Name = "Tiago Marques",  Class = "12.º A", Scenarios = 1, Simulations = 2, Done = 1, Total = 6 },
-        new { Name = "Sofia Ribeiro",  Class = "11.º A", Scenarios = 3, Simulations = 6, Done = 5, Total = 7 },
-        new { Name = "Bruno Almeida",  Class = "11.º B", Scenarios = 2, Simulations = 4, Done = 3, Total = 6 }
-    };
+@{
+    ViewData["Title"] = "Alunos";
+    Layout = "_DashboardLayout";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-header__title">Progresso dos alunos</h1>
-        <p class="page-header__subtitle">Vista geral da atividade e desempenho.</p>
+        <h1 class="page-header__title">Alunos associados</h1>
+        <p class="page-header__subtitle">Lista de alunos ligados às tuas turmas e desafios.</p>
     </div>
     <div class="page-header__actions">
-        <button class="btn btn--outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar CSV
-        </button>
+        <a class="btn btn--outline" asp-controller="Professor" asp-action="Classes">Ver turmas</a>
     </div>
 </div>
 
-<div class="filters-bar">
+<form method="get" asp-controller="Professor" asp-action="Progress" class="filters-bar">
     <span class="filters-bar__label">Turma:</span>
-    <select class="filters-bar__select">
-        <option>Todas</option>
-        <option>11.º A</option>
-        <option>11.º B</option>
-        <option>12.º A</option>
+    <select name="classId" class="filters-bar__select">
+        <option value="">Todas</option>
+        @foreach (var classroom in Model.AvailableClasses)
+        {
+            if (Model.SelectedClassId == classroom.Id)
+            {
+                <option value="@classroom.Id" selected>@classroom.Name</option>
+            }
+            else
+            {
+                <option value="@classroom.Id">@classroom.Name</option>
+            }
+        }
     </select>
-    <select class="filters-bar__select">
-        <option>Ordenar por: Nome</option>
-        <option>Ordenar por: Progresso</option>
-        <option>Ordenar por: Atividade</option>
-    </select>
-</div>
+    <button type="submit" class="btn btn--outline btn--sm">Filtrar</button>
+    @if (Model.SelectedClassId.HasValue)
+    {
+        <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Progress">Limpar filtro</a>
+    }
+</form>
 
-<div class="table-wrapper">
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Turma</th>
-                    <th>Cenários</th>
-                    <th>Simulações</th>
-                    <th>Desafios concluídos</th>
-                    <th>Progresso</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var st in students)
-                {
-                    var pct = (int)Math.Round((double)st.Done / st.Total * 100);
-                    var pctCls = pct >= 80 ? "progress__bar--success" : (pct < 40 ? "progress__bar--danger" : "progress__bar--warning");
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: var(--space-3);">
-                                <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
-                                    @st.Name[0]
-                                </div>
-                                <strong>@st.Name</strong>
-                            </div>
-                        </td>
-                        <td>@st.Class</td>
-                        <td><span class="badge badge--neutral">@st.Scenarios</span></td>
-                        <td><span class="badge badge--neutral">@st.Simulations</span></td>
-                        <td><span class="badge badge--neutral">@st.Done / @st.Total</span></td>
-                        <td style="min-width: 200px;">
-                            <div class="progress-label">
-                                <span class="text-sm fw-medium">@pct%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress__bar @pctCls" style="width: @pct%;"></div>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+@if (Model.Students.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">👤</div>
+        <div class="empty-state__title">Ainda não há alunos associados</div>
+        <p class="empty-state__text">
+            Quando os alunos entrarem numa turma ou num desafio através do código de adesão, eles passam a aparecer aqui.
+        </p>
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="Classes">Voltar às turmas</a>
     </div>
-</div>
+}
+else
+{
+    <div class="table-wrapper">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Turma</th>
+                        <th>Associação</th>
+                        <th>Desafios</th>
+                        <th>Associado desde</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model.Students)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                        @student.Name[0]
+                                    </div>
+                                    <div>
+                                        <strong>@student.Name</strong>
+                                        <div class="text-sm text-muted">@student.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@student.ClassroomName</td>
+                            <td>
+                                <span class="badge @(student.AssociationLabel == "Turma" ? "badge--success" : "badge--info")">
+                                    @student.AssociationLabel
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-sm fw-medium">@student.ActiveChallengesCount ativos / @student.AvailableChallengesCount disponíveis</div>
+                                <div class="text-sm text-muted mt-1">@student.ChallengeSummary</div>
+                            </td>
+                            <td>@student.JoinedAtUtc.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
