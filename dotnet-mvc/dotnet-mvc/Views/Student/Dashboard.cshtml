@@ -3,8 +3,6 @@
     ViewData["PageTitle"] = "Dashboard";
     ViewData["Role"] = "Student";
     ViewData["ActiveMenu"] = "dashboard";
-    ViewData["UserName"] = "Maria Costa";
-    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
     Layout = "_DashboardLayout";
 }
 
@@ -14,11 +12,15 @@
         <p class="page-header__subtitle">Aqui está um resumo do teu mês financeiro.</p>
     </div>
     <div class="page-header__actions">
+        <a class="btn btn--primary" asp-controller="Student" asp-action="JoinCode">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 7h3a5 5 0 0 1 0 10h-3"/><path d="M9 17H6A5 5 0 0 1 6 7h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Aderir por código
+        </a>
         <a class="btn btn--outline" asp-controller="Student" asp-action="CreateScenario">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Novo cenário
         </a>
-        <a class="btn btn--primary" asp-controller="Student" asp-action="Simulations">
+        <a class="btn btn--ghost" asp-controller="Student" asp-action="Simulations">
             Simular agora
         </a>
     </div>

@@ -1,4 +1,5 @@
 using dotnet_mvc.Security;
+using dotnet_mvc.Services.Academic;
 using Microsoft.EntityFrameworkCore;
 using dotnet_mvc.Data;
 using dotnet_mvc.Models;
@@ -29,6 +30,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<ISessionTokenService, SessionTokenService>();
 builder.Services.AddScoped<CookieSessionValidator>();
+builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
+builder.Services.AddScoped<IAcademicManagementService, AcademicManagementService>();
 
 builder.Services
     .AddAuthentication(AuthConstants.AuthenticationScheme)

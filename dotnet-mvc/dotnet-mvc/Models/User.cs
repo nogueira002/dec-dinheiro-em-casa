@@ -19,4 +19,9 @@ public class User
     public string? SessionTokenHash { get; set; }
     public DateTime? SessionExpiresAtUtc { get; set; }
     public DateTime? LastLoginAtUtc { get; set; }
+
+    public ICollection<Classroom> ManagedClassrooms { get; set; } = [];
+    public ICollection<ClassroomMembership> ClassroomMemberships { get; set; } = [];
+    public ICollection<ChallengeEnrollment> ChallengeEnrollments { get; set; } = [];
+    public ICollection<Challenge> CreatedChallenges { get; set; } = [];
 }
