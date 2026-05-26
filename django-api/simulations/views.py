@@ -51,14 +51,6 @@ def welcome(request):
     return Response(serializer.data)
 
 
-@api_view(['GET'])
-def health_check(request):
-    logger.info("Health check requested")
-    return Response({
-        "status": "ok",
-        "service": "django-api",
-        "version": "1.0.0"
-    })
 
 
 @api_view(['POST'])

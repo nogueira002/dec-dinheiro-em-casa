@@ -1,3 +1,0 @@
-from simulations.factories.student_factory import StudentFactory
-from simulations.factories.single_parent_factory import SingleParentFactory
-from simulations.factories.couple_factory import CoupleFactory
