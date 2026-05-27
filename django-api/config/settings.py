@@ -93,6 +93,14 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "DEC - Dinheiro Em Casa API",
     "DESCRIPTION": "API de simulação financeira",
     "VERSION": "1.0.0",
+    "TAGS": [
+        {"name": "Geral", "description": "Endpoints gerais da API"},
+        {"name": "Calculadores", "description": "Cálculos financeiros"},
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "docExpansion": "list",
+        "defaultModelsExpandDepth": -1,
+    },
 }
 
 LOGGING = {

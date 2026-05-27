@@ -1,5 +1,6 @@
 import logging
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -39,6 +40,7 @@ class ProjecaoPoupancaSerializer(serializers.Serializer):
     meses              = serializers.IntegerField()
 
 
+@extend_schema(tags=['Geral'])
 @api_view(['GET'])
 def welcome(request):
     from datetime import datetime
@@ -59,6 +61,7 @@ def welcome(request):
 
 
 
+@extend_schema(tags=['Calculadores'])
 @api_view(['POST'])
 def taxa_esforco(request):
     logger.info("Taxa esforco request received — data: %s", request.data)
@@ -80,6 +83,7 @@ def taxa_esforco(request):
         return Response({"erro": str(e)}, status=400)
 
 
+@extend_schema(tags=['Calculadores'])
 @api_view(['POST'])
 def capitalizacao(request):
     logger.info("Capitalizacao request received — data: %s", request.data)
@@ -102,6 +106,7 @@ def capitalizacao(request):
         return Response({"erro": str(e)}, status=400)
 
 
+@extend_schema(tags=['Calculadores'])
 @api_view(['POST'])
 def simular_credito(request):
     logger.info("Simular credito request received — data: %s", request.data)
@@ -124,6 +129,7 @@ def simular_credito(request):
         return Response({"erro": str(e)}, status=400)
 
 
+@extend_schema(tags=['Calculadores'])
 @api_view(['POST'])
 def projecao_poupanca(request):
     logger.info("Projecao poupanca request received — data: %s", request.data)
