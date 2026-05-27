@@ -4,25 +4,13 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from simulations.strategies import ConservativeStrategy, ModerateStrategy, AggressiveStrategy
-from simulations.scenarios import StudentScenario, SingleParentScenario, CoupleScenario
+from simulations.calculators.taxa_esforco import calcular_taxa_esforco
+from simulations.calculators.capitalizacao_composta import calcular_capitalizacao_composta
+from simulations.calculators.amortizacao_price import calcular_amortizacao
+from simulations.calculators.projecao_poupanca import calcular_projecao_poupanca
+
 
 logger = logging.getLogger(__name__)
-
-
-class SimulateSerializer(serializers.Serializer):
-    strategy = serializers.ChoiceField(
-        choices=['conservative', 'moderate', 'aggressive'],
-        default='moderate'
-    )
-
-
-class ScenarioSerializer(serializers.Serializer):
-    type = serializers.ChoiceField(
-        choices=['student', 'couple', 'single_parent'],
-        default='student'
-    )
-
 
 class WelcomeSerializer(serializers.Serializer):
     mensagem   = serializers.CharField()
@@ -30,6 +18,25 @@ class WelcomeSerializer(serializers.Serializer):
     status     = serializers.CharField()
     timestamp  = serializers.CharField()
 
+class TaxaEsforcoSerializer(serializers.Serializer):
+    encargos_fixos     = serializers.FloatField()
+    rendimento_liquido = serializers.FloatField()
+
+class CapitalizacaoSerializer(serializers.Serializer):
+    capital = serializers.FloatField()
+    tan     = serializers.FloatField()
+    meses   = serializers.IntegerField()
+
+class SimularCreditoSerializer(serializers.Serializer):
+    emprestimo = serializers.FloatField()
+    tan        = serializers.FloatField()
+    meses      = serializers.IntegerField()
+
+class ProjecaoPoupancaSerializer(serializers.Serializer):
+    rendimento_mensal  = serializers.FloatField()
+    despesas_mensais   = serializers.FloatField()
+    taxa_inflacao      = serializers.FloatField()
+    meses              = serializers.IntegerField()
 
 
 @api_view(['GET'])
@@ -52,52 +59,89 @@ def welcome(request):
 
 
 
-
 @api_view(['POST'])
-def simulate(request):
-    logger.info("Simulation request received — data: %s", request.data)
+def taxa_esforco(request):
+    logger.info("Taxa esforco request received — data: %s", request.data)
 
-    serializer = SimulateSerializer(data=request.data)
-
+    serializer = TaxaEsforcoSerializer(data=request.data)
     if not serializer.is_valid():
-        logger.warning("Invalid simulation data — errors: %s", serializer.errors)
+        logger.warning("Invalid taxa esforco data — errors: %s", serializer.errors)
         return Response(serializer.errors, status=400)
 
-    strategy_type = serializer.validated_data['strategy']
-    logger.debug("Strategy selected: %s", strategy_type)
-
-    if strategy_type == 'conservative':
-        strategy = ConservativeStrategy()
-    elif strategy_type == 'aggressive':
-        strategy = AggressiveStrategy()
-    else:
-        strategy = ModerateStrategy()
-
-    result = strategy.simulate(request.data)
-    logger.info("Simulation completed — strategy: %s", strategy_type)
-    return Response(result)
+    try:
+        resultado = calcular_taxa_esforco(
+            serializer.validated_data['encargos_fixos'],
+            serializer.validated_data['rendimento_liquido']
+        )
+        logger.info("Taxa esforco calculated — result: %s", resultado)
+        return Response(resultado)
+    except ValueError as e:
+        logger.error("Taxa esforco error — %s", str(e))
+        return Response({"erro": str(e)}, status=400)
 
 
 @api_view(['POST'])
-def create_scenario(request):
-    logger.info("Scenario request received — data: %s", request.data)
+def capitalizacao(request):
+    logger.info("Capitalizacao request received — data: %s", request.data)
 
-    serializer = ScenarioSerializer(data=request.data)
-
+    serializer = CapitalizacaoSerializer(data=request.data)
     if not serializer.is_valid():
-        logger.warning("Invalid scenario data — errors: %s", serializer.errors)
+        logger.warning("Invalid capitalizacao data — errors: %s", serializer.errors)
         return Response(serializer.errors, status=400)
 
-    scenario_type = serializer.validated_data['type']
-    logger.debug("Scenario type selected: %s", scenario_type)
+    try:
+        resultado = calcular_capitalizacao_composta(
+            serializer.validated_data['capital'],
+            serializer.validated_data['tan'],
+            serializer.validated_data['meses']
+        )
+        logger.info("Capitalizacao calculated — result: %s", resultado)
+        return Response(resultado)
+    except ValueError as e:
+        logger.error("Capitalizacao error — %s", str(e))
+        return Response({"erro": str(e)}, status=400)
 
-    if scenario_type == 'couple':
-        scenario = CoupleScenario()
-    elif scenario_type == 'single_parent':
-        scenario = SingleParentScenario()
-    else:
-        scenario = StudentScenario()
 
-    result = scenario.create_scenario(request.data)
-    logger.info("Scenario created — type: %s", scenario_type)
-    return Response(result)
+@api_view(['POST'])
+def simular_credito(request):
+    logger.info("Simular credito request received — data: %s", request.data)
+
+    serializer = SimularCreditoSerializer(data=request.data)
+    if not serializer.is_valid():
+        logger.warning("Invalid simular credito data — errors: %s", serializer.errors)
+        return Response(serializer.errors, status=400)
+
+    try:
+        resultado = calcular_amortizacao(
+            serializer.validated_data['emprestimo'],
+            serializer.validated_data['tan'],
+            serializer.validated_data['meses']
+        )
+        logger.info("Simular credito calculated — result: %s", resultado)
+        return Response(resultado)
+    except ValueError as e:
+        logger.error("Simular credito error — %s", str(e))
+        return Response({"erro": str(e)}, status=400)
+
+
+@api_view(['POST'])
+def projecao_poupanca(request):
+    logger.info("Projecao poupanca request received — data: %s", request.data)
+
+    serializer = ProjecaoPoupancaSerializer(data=request.data)
+    if not serializer.is_valid():
+        logger.warning("Invalid projecao poupanca data — errors: %s", serializer.errors)
+        return Response(serializer.errors, status=400)
+
+    try:
+        resultado = calcular_projecao_poupanca(
+            serializer.validated_data['rendimento_mensal'],
+            serializer.validated_data['despesas_mensais'],
+            serializer.validated_data['taxa_inflacao'],
+            serializer.validated_data['meses']
+        )
+        logger.info("Projecao poupanca calculated — result: %s", resultado)
+        return Response(resultado)
+    except ValueError as e:
+        logger.error("Projecao poupanca error — %s", str(e))
+        return Response({"erro": str(e)}, status=400)
