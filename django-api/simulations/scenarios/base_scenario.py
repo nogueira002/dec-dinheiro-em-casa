@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-class BaseFactory(ABC):
+class BaseScenario(ABC):
     """
     Base interface for creating household scenarios.
-    Implementations: StudentFactory, SingleParentFactory, CoupleFactory
+    Implementations: StudentScenario, SingleParentScenario, CoupleScenario
     """
 
     @abstractmethod

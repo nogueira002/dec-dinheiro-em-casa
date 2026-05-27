@@ -2,46 +2,61 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
 jobs:
-  build:
 
+  # ── Django (lint + testes + cobertura) ─────────────────────────────────────
+  django:
+    name: Django — Lint & Tests
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    # Python (Django + Simulator)
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        #Provisório 
-        python-version: '3.11'
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('django-api/requirements.txt') }}
+          restore-keys: pip-
 
-    - name: Install Python dependencies
-      run: |
-        cd django-api
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          cd django-api
+          pip install -r requirements.txt
 
-    - name: Run Django tests
-      run: |
-        cd django-api
-        python manage.py test
+      - name: Lint (ruff)
+        run: |
+          cd django-api
+          ruff check .
 
-    # .NET
+      - name: Tests + Coverage
+        run: |
+          cd django-api
+          pytest --cov=simulations --cov-report=term-missing --cov-fail-under=50
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        #Provisório 
-        dotnet-version: '8.0.x'
+  # ── .NET (restore + build) ──────────────────────────────────────────────────
+  dotnet:
+    name: .NET — Build
+    runs-on: ubuntu-latest
 
-    - name: Build .NET project
-      run: |
-        cd dotnet-mvc
-        dotnet restore
-        dotnet build --no-restore
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore & Build
+        run: |
+          cd dotnet-mvc
+          dotnet restore
+          dotnet build --no-restore --configuration Release

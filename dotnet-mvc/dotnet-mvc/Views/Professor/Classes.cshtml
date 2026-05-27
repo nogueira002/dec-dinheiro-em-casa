@@ -1,24 +1,14 @@
+@model dotnet_mvc.ViewModels.Professor.ClassesIndexViewModel
+
 @{
     ViewData["Title"] = "Turmas";
-    ViewData["PageTitle"] = "As tuas turmas";
-    ViewData["Role"] = "Professor";
-    ViewData["ActiveMenu"] = "classes";
-    ViewData["UserName"] = "Prof. Santos";
-    ViewData["UserRoleLabel"] = "Professor";
     Layout = "_DashboardLayout";
-
-    var classes = new[]
-    {
-        new { Name = "11.º A · Economia",   Code = "DEC-11A2X", Students = 28, Active = 6 },
-        new { Name = "11.º B · Economia",   Code = "DEC-11B7P", Students = 26, Active = 4 },
-        new { Name = "12.º A · Economia C", Code = "DEC-12AX9", Students = 28, Active = 5 }
-    };
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-header__title">Gerir turmas</h1>
-        <p class="page-header__subtitle">Cria turmas e partilha o código de adesão com os teus alunos.</p>
+        <p class="page-header__subtitle">Consulta as tuas turmas, os desafios criados e os alunos associados.</p>
     </div>
     <div class="page-header__actions">
         <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateClass">
@@ -28,7 +18,36 @@
     </div>
 </div>
 
-@if (classes.Length == 0)
+<div class="grid grid--3 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">👥</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Turmas</div>
+            <div class="stat-card__value">@Model.Classes.Count</div>
+            <div class="stat-card__hint">Visão geral atual</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">★</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Desafios</div>
+            <div class="stat-card__value">@Model.TotalChallenges</div>
+            <div class="stat-card__hint">Criados nas tuas turmas</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">✓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Alunos</div>
+            <div class="stat-card__value">@Model.TotalStudents</div>
+            <div class="stat-card__hint">Associados às tuas turmas/desafios</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Classes.Count == 0)
 {
     <div class="empty-state">
         <div class="empty-state__icon">👥</div>
@@ -39,23 +58,35 @@
 }
 else
 {
-    <div class="grid grid--auto-md">
-        @foreach (var c in classes)
+    <div style="display: grid; gap: var(--space-6);">
+        @foreach (var c in Model.Classes)
         {
             <article class="class-card">
                 <div class="class-card__header">
                     <div>
                         <h3 class="class-card__title">@c.Name</h3>
-                        <p class="text-sm text-muted mt-1">@c.Students alunos inscritos</p>
+                        <p class="text-sm text-muted mt-1">@c.StudentCount alunos associados</p>
                     </div>
-                    <span class="badge badge--success badge--dot">Ativa</span>
+                    @if (c.IsActive)
+                    {
+                        <span class="badge badge--success badge--dot">Ativa</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge--warning badge--dot">Inativa</span>
+                    }
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(c.Description))
+                {
+                    <p class="text-sm" style="color: var(--color-gray-700);">@c.Description</p>
+                }
 
                 <div>
                     <p class="text-sm text-muted mb-2">Código de adesão</p>
                     <div style="display: flex; align-items: center; gap: var(--space-2);">
-                        <span class="join-code">@c.Code</span>
-                        <button class="btn btn--ghost btn--sm" data-copy="@c.Code" title="Copiar código">
+                        <span class="join-code">@c.AccessCode</span>
+                        <button class="btn btn--ghost btn--sm" data-copy="@c.AccessCode" title="Copiar código">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             Copiar
                         </button>
@@ -64,12 +95,102 @@ else
 
                 <div class="class-card__meta">
                     <div class="class-card__row">
-                        <strong>@c.Active</strong> desafios ativos
+                        <strong>@c.ActiveChallengesCount</strong> desafios ativos
                     </div>
+                    <div class="class-card__row">
+                        <strong>@c.TotalChallengesCount</strong> desafios criados
+                    </div>
+                    <div class="class-card__row">
+                        <strong>@c.ClassroomStudentCount</strong> alunos na turma
+                    </div>
+                    @if (c.DirectChallengeParticipantCount > 0)
+                    {
+                        <div class="class-card__row">
+                            <strong>@c.DirectChallengeParticipantCount</strong> alunos via código de desafio
+                        </div>
+                    }
+                </div>
+
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-5);">
+                    <section class="card" style="padding: var(--space-5);">
+                        <div class="card__header" style="padding: 0 0 var(--space-4);">
+                            <div>
+                                <h4 class="card__title">Desafios</h4>
+                                <p class="card__subtitle">Atividades já criadas nesta turma.</p>
+                            </div>
+                        </div>
+
+                        @if (c.Challenges.Count == 0)
+                        {
+                            <p class="text-sm text-muted">Ainda não há desafios associados a esta turma.</p>
+                        }
+                        else
+                        {
+                            <div class="activity-list">
+                                @foreach (var challenge in c.Challenges)
+                                {
+                                    <div class="activity-item">
+                                        <div class="activity-item__icon">★</div>
+                                        <div class="activity-item__body">
+                                            <div class="activity-item__title">@challenge.Title</div>
+                                            <div class="activity-item__meta">
+                                                Código: <strong>@challenge.AccessCode</strong> · Entrega: @challenge.Deadline.ToString("dd/MM/yyyy")
+                                            </div>
+                                            <div class="activity-item__meta">
+                                                @challenge.AudienceCount alunos com acesso
+                                                @if (challenge.DirectParticipantCount > 0)
+                                                {
+                                                    <text> · @challenge.DirectParticipantCount via código direto</text>
+                                                }
+                                            </div>
+                                        </div>
+                                        <span class="badge @(challenge.IsExpired ? "badge--danger" : "badge--success")">@challenge.StatusLabel</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </section>
+
+                    <section class="card" style="padding: var(--space-5);">
+                        <div class="card__header" style="padding: 0 0 var(--space-4);">
+                            <div>
+                                <h4 class="card__title">Alunos</h4>
+                                <p class="card__subtitle">Participantes da turma e dos desafios.</p>
+                            </div>
+                        </div>
+
+                        @if (c.Students.Count == 0)
+                        {
+                            <p class="text-sm text-muted">Ainda não há alunos associados a esta turma.</p>
+                        }
+                        else
+                        {
+                            <div class="activity-list">
+                                @foreach (var student in c.Students)
+                                {
+                                    <div class="activity-item">
+                                        <div class="activity-item__icon">@student.Name[0]</div>
+                                        <div class="activity-item__body">
+                                            <div class="activity-item__title">@student.Name</div>
+                                            <div class="activity-item__meta">@student.Email</div>
+                                            <div class="activity-item__meta">
+                                                Associado em @student.JoinedAtUtc.ToString("dd/MM/yyyy")
+                                                @if (!string.IsNullOrWhiteSpace(student.ChallengeSummary))
+                                                {
+                                                    <text> · @student.ChallengeSummary</text>
+                                                }
+                                            </div>
+                                        </div>
+                                        <span class="badge @(student.AssociationLabel == "Turma" ? "badge--success" : "badge--info")">@student.AssociationLabel</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </section>
                 </div>
 
                 <div class="card__footer">
-                    <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+                    <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress" asp-route-classId="@c.Id">Ver alunos</a>
                     <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="CreateChallenge">Criar desafio</a>
                 </div>
             </article>

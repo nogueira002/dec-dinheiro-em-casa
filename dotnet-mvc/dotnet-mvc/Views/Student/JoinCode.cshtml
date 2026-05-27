@@ -1,0 +1,62 @@
+@model dotnet_mvc.ViewModels.Student.JoinByCodeViewModel
+
+@{
+    ViewData["Title"] = "Aderir por código";
+    ViewData["PageTitle"] = "Aderir por código";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "join-code";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Aderir por código</h1>
+        <p class="page-header__subtitle">Introduz um código de turma ou de desafio para desbloquear os conteúdos atribuídos.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">Ver desafios</a>
+    </div>
+</div>
+
+<div style="max-width: 720px;">
+    <form asp-controller="Student" asp-action="JoinCode" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Código de adesão</h2>
+                    <p class="card__subtitle">Os códigos começam normalmente por <strong>DEC-</strong>.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="AccessCode" class="form-label form-label--required"></label>
+                <input asp-for="AccessCode"
+                       class="form-control"
+                       placeholder="Ex.: DEC-A7K9Q"
+                       autocomplete="off"
+                       autocapitalize="characters"
+                       spellcheck="false" />
+                <span asp-validation-for="AccessCode" class="field-validation-error"></span>
+                <span class="form-hint">Se o código pertencer a uma turma, ficas inscrito nela. Se pertencer a um desafio, o acesso fica limitado a esse desafio.</span>
+            </div>
+        </div>
+
+        <div class="alert alert--info mb-6">
+            <span>ℹ</span>
+            <div>
+                Depois da adesão, os desafios disponíveis passam a aparecer automaticamente na tua área de desafios.
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Confirmar adesão</button>
+            <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

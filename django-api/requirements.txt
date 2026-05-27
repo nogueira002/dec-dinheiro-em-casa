@@ -3,3 +3,7 @@ djangorestframework
 PyMySQL
 cryptography
 drf-spectacular
+pytest
+pytest-django
+pytest-cov
+ruff

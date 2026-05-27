@@ -1,21 +1,21 @@
 import logging
-from simulations.factories.base_factory import BaseFactory
+from simulations.scenarios.base_scenario import BaseScenario
 
 logger = logging.getLogger(__name__)
 
 
-class SingleParentFactory(BaseFactory):
+class SingleParentScenario(BaseScenario):
     """
     Creates scenario for a single-parent family.
     One income, expenses with children and housing.
     """
 
     def create_scenario(self, data: dict) -> dict:
-        logger.debug("SingleParentFactory.create_scenario called — data: %s", data)
+        logger.debug("SingleParentScenario.create_scenario called — data: %s", data)
         # TODO: implement logic in Sprint C
         result = {
             "type": "single_parent",
             "status": "not_implemented"
         }
-        logger.info("SingleParentFactory result: %s", result)
+        logger.info("SingleParentScenario result: %s", result)
         return result
