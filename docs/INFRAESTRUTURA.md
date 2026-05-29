@@ -197,3 +197,42 @@ docker compose down -v
 | **Isolamento de portas** | MySQL e servidores app sem portas públicas — só o Nginx é acessível |
 | **Virtual Hosting** | Nginx serve múltiplos serviços no mesmo IP/porta com base no URL path |
 | **HTTP → HTTPS redirect** | Redirecionamento automático 301 de porta 80 para 443 |
+
+---
+
+## Acesso à Base de Dados em Desenvolvimento
+
+Por defeito o MySQL não tem portas expostas ao exterior. Para aceder durante o desenvolvimento, adiciona temporariamente o `ports` ao serviço `mysql` no `docker-compose.yml`:
+
+```yaml
+mysql:
+  ports:
+    - "3307:3306"
+```
+
+Depois reinicia os containers:
+
+```bash
+docker compose down --remove-orphans
+docker compose up -d
+```
+
+### Ligação com cliente gráfico (TablePlus, DBeaver, MySQL Workbench)
+
+| Campo | Valor |
+|---|---|
+| Host | `127.0.0.1` |
+| Port | `3307` |
+| User | `dec_portal` |
+| Password | `portalpass123` |
+| Database | `dec_educativa` |
+
+### Ligação no Rider (appsettings.json)
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "server=localhost;port=3307;database=dec_educativa;user=dec_portal;password=portalpass123"
+}
+```
+
+> **Importante:** Remover o `ports` do `docker-compose.yml` antes de fazer commit — a base de dados nunca deve ficar exposta em produção.
