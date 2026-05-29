@@ -1,4 +1,9 @@
 # ========================
+# Certificados SSL (nunca commitar chaves privadas)
+# ========================
+nginx/certs/
+
+# ========================
 # .NET / C#
 # ========================
 bin/
