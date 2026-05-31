@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # Django REST API (Financial Module) — sem BD
+  # Django REST API (Financial Module)
   # ──────────────────────────────────────────────
   django-api:
     build:
@@ -35,6 +35,14 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      MYSQL_HOST: mysql-financeira
+      MYSQL_DB: dec_financeira
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PORT: 3306
+    depends_on:
+      mysql-financeira:
+        condition: service_healthy
     networks:
       - internal
     healthcheck:
@@ -46,7 +54,7 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # MySQL — base de dados do portal MVC
+  # MySQL — base de dados do portal MVC (dec_educativa)
   # ──────────────────────────────────────────────
   mysql:
     image: mysql:8.0
@@ -59,7 +67,36 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - internal
-    # Para acesso local à BD adicionar: ports: ["3307:3306"]
+    healthcheck:
+      test:
+        - "CMD"
+        - "mysqladmin"
+        - "ping"
+        - "-h"
+        - "localhost"
+        - "-u"
+        - "root"
+        - "--password=${MYSQL_ROOT_PASSWORD}"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # MySQL Financeira — base de dados do Django API (dec_financeira)
+  # ──────────────────────────────────────────────
+  mysql-financeira:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dec_financeira
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-financeira-data:/var/lib/mysql
+    networks:
+      - internal
     healthcheck:
       test:
         - "CMD"
@@ -109,7 +146,8 @@ networks:
     driver: bridge
 
 # ──────────────────────────────────────────────
-# Volume para persistência dos dados MySQL
+# Volumes para persistência dos dados MySQL
 # ──────────────────────────────────────────────
 volumes:
   mysql-data:
+  mysql-financeira-data:
