@@ -5,6 +5,10 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+
+from simulations.models import Entry, Objective, SimulationHistory
+
+
 from simulations.calculators.taxa_esforco import calcular_taxa_esforco
 from simulations.calculators.capitalizacao_composta import calcular_capitalizacao_composta
 from simulations.calculators.amortizacao_price import calcular_amortizacao
@@ -38,6 +42,29 @@ class ProjecaoPoupancaSerializer(serializers.Serializer):
     despesas_mensais   = serializers.FloatField()
     taxa_inflacao      = serializers.FloatField()
     meses              = serializers.IntegerField()
+
+class EntrySerializer(serializers.Serializer):
+    scenario_id = serializers.IntegerField()
+    type = serializers.CharField()
+    category = serializers.CharField()
+    amount = serializers.FloatField()
+    month = serializers.IntegerField()
+    year = serializers.IntegerField()
+    recurrence = serializers.CharField()
+
+
+class ObjectiveSerializer(serializers.Serializer):
+    scenario_id = serializers.IntegerField()
+    description = serializers.CharField()
+    targetvalue = serializers.FloatField()
+    current_value = serializers.FloatField()
+    current_value = serializers.IntegerField()
+
+class SimulationHistorySerializer(serializers.Serializer):
+    scenario_id = serializers.IntegerField()
+    executiondate = serializers.DateTimeField()
+    jsonresults = serializers.JSONField()
+    simulation_type = serializers.CharField()
 
 
 @extend_schema(tags=['Geral'])
@@ -150,3 +177,26 @@ def projecao_poupanca(request):
     except ValueError as e:
         logger.error("Projecao poupanca error — %s", str(e))
         return Response({"erro": str(e)}, status=400)
+
+
+@extend_schema(tags=['Lançamento'])
+@api_view(['POST'])
+def create_entry(request):
+    logger.info("Criação do entry — data: %s", request.data)
+    serializer = EntrySerializer(data=request.data)
+
+    if not serializer.is_valid():
+        logger.warning("Invalid entry data - errors: %s", serializer.errors)
+        return Response(serializer.errors, status=400)
+
+    try:
+        entry = Entry(**serializer.validated_data)
+        entry.save()
+        logger.info("Entry criado com sucesso - id: %s", entry.id)
+        return Response(EntrySerializer(entry).data, status=201)
+
+
+    except ValueError as e:
+        logger.error("Entry error - error: %s", str(e))
+        return Response({"erro": str(e)}, status=400)
+
