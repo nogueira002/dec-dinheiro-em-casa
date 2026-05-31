@@ -37,8 +37,8 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
       MYSQL_HOST: mysql-financeira
       MYSQL_DB: dec_financeira
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_FINANCEIRA_USER}
+      MYSQL_PASSWORD: ${MYSQL_FINANCEIRA_PASSWORD}
       MYSQL_PORT: 3306
     depends_on:
       mysql-financeira:
@@ -91,8 +91,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: dec_financeira
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_FINANCEIRA_USER}
+      MYSQL_PASSWORD: ${MYSQL_FINANCEIRA_PASSWORD}
     volumes:
       - mysql-financeira-data:/var/lib/mysql
     networks:
