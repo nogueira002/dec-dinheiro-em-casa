@@ -60,7 +60,6 @@ def welcome(request):
     return Response(serializer.data)
 
 
-
 @extend_schema(tags=['Calculadores'])
 @api_view(['POST'])
 def taxa_esforco(request):
