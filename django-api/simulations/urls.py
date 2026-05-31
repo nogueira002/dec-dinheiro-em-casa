@@ -10,5 +10,6 @@ urlpatterns = [
     path('entries/',            views.entries,           name='entries'),
     path('objectives/',         views.objectives,        name='objectives'),
     path('simulation-history/', views.simulation_history,name='simulation_history'),
+    path('simulate/',           views.simulate,          name='simulate'),
 
 ]

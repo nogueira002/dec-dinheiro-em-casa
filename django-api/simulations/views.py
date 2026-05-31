@@ -13,7 +13,7 @@ from simulations.calculators.taxa_esforco import calcular_taxa_esforco
 from simulations.calculators.capitalizacao_composta import calcular_capitalizacao_composta
 from simulations.calculators.amortizacao_price import calcular_amortizacao
 from simulations.calculators.projecao_poupanca import calcular_projecao_poupanca
-
+from simulations.strategies import ConservativeStrategy, AggressiveStrategy, ModerateStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -26,17 +26,14 @@ class WelcomeSerializer(serializers.Serializer):
 class TaxaEsforcoSerializer(serializers.Serializer):
     encargos_fixos     = serializers.FloatField()
     rendimento_liquido = serializers.FloatField()
-
 class CapitalizacaoSerializer(serializers.Serializer):
     capital = serializers.FloatField()
     tan     = serializers.FloatField()
     meses   = serializers.IntegerField()
-
 class SimularCreditoSerializer(serializers.Serializer):
     emprestimo = serializers.FloatField()
     tan        = serializers.FloatField()
     meses      = serializers.IntegerField()
-
 class ProjecaoPoupancaSerializer(serializers.Serializer):
     rendimento_mensal  = serializers.FloatField()
     despesas_mensais   = serializers.FloatField()
@@ -51,8 +48,6 @@ class EntrySerializer(serializers.Serializer):
     month = serializers.IntegerField()
     year = serializers.IntegerField()
     recurrence = serializers.CharField()
-
-
 class ObjectiveSerializer(serializers.Serializer):
     scenario_id = serializers.IntegerField()
     description = serializers.CharField()
@@ -60,12 +55,21 @@ class ObjectiveSerializer(serializers.Serializer):
     termmonths = serializers.IntegerField()
     current_value = serializers.FloatField()
     current_value = serializers.IntegerField()
-
 class SimulationHistorySerializer(serializers.Serializer):
     scenario_id = serializers.IntegerField()
     executiondate = serializers.DateTimeField(read_only=True)
     jsonresults = serializers.JSONField()
     simulation_type = serializers.CharField()
+
+class SimulateSerializer(serializers.Serializer):
+    strategy          = serializers.ChoiceField(choices=['conservative', 'moderate', 'aggressive'], default='moderate')
+    scenario_id       = serializers.IntegerField(required=False, default=0)
+    rendimento_mensal = serializers.FloatField(required=False, default=0)
+    despesas_mensais  = serializers.FloatField(required=False, default=0)
+    encargos_fixos    = serializers.FloatField(required=False, default=0)
+    capital_poupanca  = serializers.FloatField(required=False, default=0)
+    emprestimo        = serializers.FloatField(required=False, default=0)
+    meses             = serializers.IntegerField(required=False, default=12)
 
 
 @extend_schema(tags=['Geral'])
@@ -178,7 +182,6 @@ def projecao_poupanca(request):
     except ValueError as e:
         logger.error("Projecao poupanca error — %s", str(e))
         return Response({"erro": str(e)}, status=400)
-
 
 
 @extend_schema(tags=['Lançamento'])
@@ -297,3 +300,42 @@ def simulation_history(request):
         except Exception as e:
             logger.error("Simulation history list error — %s", str(e))
             return Response({"erro": str(e)}, status=400)
+
+
+
+
+
+@api_view(['POST'])
+def simulate(request):
+    logger.info("Simulation request received — data: %s", request.data)
+
+    serializer = SimulateSerializer(data=request.data)
+    if not serializer.is_valid():
+        logger.warning("Invalid simulation data — errors: %s", serializer.errors)
+        return Response(serializer.errors, status=400)
+
+    strategy_type = serializer.validated_data['strategy']
+    logger.debug("Strategy selected: %s", strategy_type)
+
+    if strategy_type == 'conservative':
+        strategy = ConservativeStrategy()
+    elif strategy_type == 'aggressive':
+        strategy = AggressiveStrategy()
+    else:
+        strategy = ModerateStrategy()
+
+    result = strategy.simulate(request.data)
+
+    # Guarda automaticamente no histórico
+    try:
+        SimulationHistory(
+            scenario_id=request.data.get('scenario_id', 0),
+            simulation_type=strategy_type,
+            jsonresults=result
+        ).save()
+        logger.info("Simulação guardada no histórico — scenario_id: %s", request.data.get('scenario_id'))
+    except Exception as e:
+        logger.warning("Erro ao guardar histórico — %s", str(e))
+
+    logger.info("Simulation completed — strategy: %s", strategy_type)
+    return Response(result)
