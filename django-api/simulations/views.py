@@ -57,6 +57,7 @@ class ObjectiveSerializer(serializers.Serializer):
     scenario_id = serializers.IntegerField()
     description = serializers.CharField()
     targetvalue = serializers.FloatField()
+    termmonths = serializers.IntegerField()
     current_value = serializers.FloatField()
     current_value = serializers.IntegerField()
 
@@ -220,4 +221,42 @@ def entries(request):
             logger.error("Entry list error — %s", str(e))
             return Response({"erro": str(e)}, status=400)
 
+
+@extend_schema(tags=['Lançamento'])
+@api_view(['GET', 'POST'])
+def objectives(request):
+    if request.method == 'POST':
+        logger.info("Criar objectivos — data: %s", request.data)
+
+        serializer = ObjectiveSerializer(data=request.data)
+        if not serializer.is_valid():
+            logger.warning("Invalid objective data - errors: %s", serializer.errors)
+            return Response(serializer.errors, status=400)
+
+        try:
+            objective = Objective(**serializer.validated_data)
+            objective.save()
+            logger.info("Objectivos criado com sucesso — id: %s", objective.id)
+            return Response(ObjectiveSerializer(objective).data, status=201)
+        except Exception as e:
+            logger.error("Objective error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
+
+    elif request.method == 'GET':
+        logger.info("Listar objetivos — scenario_id: %s", request.query_params.get('scenario_id'))
+
+        scenario_id = request.query_params.get('scenario_id')
+
+        if not scenario_id:
+            return Response({"erro": "scenario_id é obrigatório"}, status=400)
+
+        try:
+            objective_list = Objective.objects.filter(scenario_id=scenario_id)
+            serializer = ObjectiveSerializer(objective_list, many=True)
+            logger.info("Objectivos listados — total: %s", objective_list.count())
+            return Response(serializer.data, status=200)
+
+        except Exception as e:
+            logger.error("Objectivo list error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
 
