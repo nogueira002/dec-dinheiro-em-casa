@@ -63,7 +63,7 @@ class ObjectiveSerializer(serializers.Serializer):
 
 class SimulationHistorySerializer(serializers.Serializer):
     scenario_id = serializers.IntegerField()
-    executiondate = serializers.DateTimeField()
+    executiondate = serializers.DateTimeField(read_only=True)
     jsonresults = serializers.JSONField()
     simulation_type = serializers.CharField()
 
@@ -260,3 +260,40 @@ def objectives(request):
             logger.error("Objectivo list error — %s", str(e))
             return Response({"erro": str(e)}, status=400)
 
+@extend_schema(tags=['Simulações'])
+@api_view(['GET', 'POST'])
+def simulation_history(request):
+    if request.method == 'POST':
+        logger.info("Guardar simulação — data: %s", request.data)
+
+        serializer = SimulationHistorySerializer(data=request.data)
+        if not serializer.is_valid():
+            logger.warning("Invalid simulation data — errors: %s", serializer.errors)
+            return Response(serializer.errors, status=400)
+
+        try:
+            simulation = SimulationHistory(**serializer.validated_data)
+            simulation.save()
+            logger.info("Simulação guardada com sucesso — id: %s", simulation.id)
+            return Response(SimulationHistorySerializer(simulation).data, status=201)
+        except Exception as e:
+            logger.error("Simulation history error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
+
+    elif request.method == 'GET':
+        logger.info("Listar histórico — scenario_id: %s", request.query_params.get('scenario_id'))
+
+        scenario_id = request.query_params.get('scenario_id')
+
+        if not scenario_id:
+            return Response({"erro": "scenario_id é obrigatório"}, status=400)
+
+        try:
+            history_list = SimulationHistory.objects.filter(scenario_id=scenario_id)
+            serializer = SimulationHistorySerializer(history_list, many=True)
+            logger.info("Histórico listado — total: %s", history_list.count())
+            return Response(serializer.data, status=200)
+
+        except Exception as e:
+            logger.error("Simulation history list error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
