@@ -12,7 +12,7 @@ class CoupleScenario(BaseScenario):
 
     def create_scenario(self, data: dict) -> dict:
         logger.debug("CoupleScenario.create_scenario called — data: %s", data)
-        # TODO: implement logic in Sprint C
+
         result = {
             "type": "couple",
             "status": "not_implemented"

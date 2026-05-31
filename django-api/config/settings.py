@@ -102,8 +102,10 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API de simulação financeira",
     "VERSION": "1.0.0",
     "TAGS": [
-        {"name": "Geral", "description": "Endpoints gerais da API"},
+        {"name": "Geral",        "description": "Endpoints gerais da API"},
         {"name": "Calculadores", "description": "Cálculos financeiros"},
+        {"name": "Lançamento",   "description": "Gestão de lançamentos e objetivos financeiros"},
+        {"name": "Simulações",   "description": "Simulações financeiras completas"},
     ],
     "SWAGGER_UI_SETTINGS": {
         "docExpansion": "list",

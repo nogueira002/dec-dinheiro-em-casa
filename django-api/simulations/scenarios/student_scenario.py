@@ -12,7 +12,7 @@ class StudentScenario(BaseScenario):
 
     def create_scenario(self, data: dict) -> dict:
         logger.debug("StudentScenario.create_scenario called — data: %s", data)
-        # TODO: implement logic in Sprint C
+
         result = {
             "type": "student",
             "status": "not_implemented"

@@ -1,6 +1,7 @@
 import logging
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -17,6 +18,9 @@ from simulations.strategies import ConservativeStrategy, AggressiveStrategy, Mod
 
 logger = logging.getLogger(__name__)
 
+
+# --- Serializers de request ---
+
 class WelcomeSerializer(serializers.Serializer):
     mensagem   = serializers.CharField()
     linguagem  = serializers.CharField()
@@ -26,39 +30,61 @@ class WelcomeSerializer(serializers.Serializer):
 class TaxaEsforcoSerializer(serializers.Serializer):
     encargos_fixos     = serializers.FloatField()
     rendimento_liquido = serializers.FloatField()
+
+class TaxaEsforcoResponseSerializer(serializers.Serializer):
+    taxa_esforco  = serializers.FloatField()
+    classificacao = serializers.CharField()
+
 class CapitalizacaoSerializer(serializers.Serializer):
     capital = serializers.FloatField()
     tan     = serializers.FloatField()
     meses   = serializers.IntegerField()
+
+class CapitalizacaoResponseSerializer(serializers.Serializer):
+    montante_final = serializers.FloatField()
+    juros_gerados  = serializers.FloatField()
+
 class SimularCreditoSerializer(serializers.Serializer):
     emprestimo = serializers.FloatField()
     tan        = serializers.FloatField()
     meses      = serializers.IntegerField()
+
+class SimularCreditoResponseSerializer(serializers.Serializer):
+    prestacao_mensal = serializers.FloatField()
+    custo_total      = serializers.FloatField()
+    juros_totais     = serializers.FloatField()
+
 class ProjecaoPoupancaSerializer(serializers.Serializer):
-    rendimento_mensal  = serializers.FloatField()
-    despesas_mensais   = serializers.FloatField()
-    taxa_inflacao      = serializers.FloatField()
-    meses              = serializers.IntegerField()
+    rendimento_mensal = serializers.FloatField()
+    despesas_mensais  = serializers.FloatField()
+    taxa_inflacao     = serializers.FloatField()
+    meses             = serializers.IntegerField()
+
+class ProjecaoPoupancaResponseSerializer(serializers.Serializer):
+    poupanca_acumulada = serializers.FloatField()
+    saldo_medio_mensal = serializers.FloatField()
+    break_even_mes     = serializers.IntegerField(allow_null=True)
 
 class EntrySerializer(serializers.Serializer):
     scenario_id = serializers.IntegerField()
-    type = serializers.CharField()
-    category = serializers.CharField()
-    amount = serializers.FloatField()
-    month = serializers.IntegerField()
-    year = serializers.IntegerField()
-    recurrence = serializers.CharField()
+    type        = serializers.CharField()
+    category    = serializers.CharField()
+    amount      = serializers.FloatField()
+    month       = serializers.IntegerField()
+    year        = serializers.IntegerField()
+    recurrence  = serializers.CharField()
+
 class ObjectiveSerializer(serializers.Serializer):
-    scenario_id = serializers.IntegerField()
-    description = serializers.CharField()
-    targetvalue = serializers.FloatField()
-    termmonths = serializers.IntegerField()
+    scenario_id   = serializers.IntegerField()
+    description   = serializers.CharField()
+    targetvalue   = serializers.FloatField()
+    termmonths    = serializers.IntegerField()
     current_value = serializers.FloatField()
-    current_value = serializers.IntegerField()
+
 class SimulationHistorySerializer(serializers.Serializer):
-    scenario_id = serializers.IntegerField()
-    executiondate = serializers.DateTimeField(read_only=True)
-    jsonresults = serializers.JSONField()
+    scenario_id     = serializers.IntegerField()
+    executiondate   = serializers.DateTimeField(read_only=True)
+    jsonresults     = serializers.JSONField()
     simulation_type = serializers.CharField()
 
 class SimulateSerializer(serializers.Serializer):
@@ -72,7 +98,9 @@ class SimulateSerializer(serializers.Serializer):
     meses             = serializers.IntegerField(required=False, default=12)
 
 
-@extend_schema(tags=['Geral'])
+# --- Views ---
+
+@extend_schema(tags=['Geral'], responses=WelcomeSerializer)
 @api_view(['GET'])
 def welcome(request):
     from datetime import datetime
@@ -92,7 +120,7 @@ def welcome(request):
     return Response(serializer.data)
 
 
-@extend_schema(tags=['Calculadores'])
+@extend_schema(tags=['Calculadores'], request=TaxaEsforcoSerializer, responses=TaxaEsforcoResponseSerializer)
 @api_view(['POST'])
 def taxa_esforco(request):
     logger.info("Taxa esforco request received — data: %s", request.data)
@@ -114,7 +142,7 @@ def taxa_esforco(request):
         return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(tags=['Calculadores'])
+@extend_schema(tags=['Calculadores'], request=CapitalizacaoSerializer, responses=CapitalizacaoResponseSerializer)
 @api_view(['POST'])
 def capitalizacao(request):
     logger.info("Capitalizacao request received — data: %s", request.data)
@@ -137,7 +165,7 @@ def capitalizacao(request):
         return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(tags=['Calculadores'])
+@extend_schema(tags=['Calculadores'], request=SimularCreditoSerializer, responses=SimularCreditoResponseSerializer)
 @api_view(['POST'])
 def simular_credito(request):
     logger.info("Simular credito request received — data: %s", request.data)
@@ -160,7 +188,7 @@ def simular_credito(request):
         return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(tags=['Calculadores'])
+@extend_schema(tags=['Calculadores'], request=ProjecaoPoupancaSerializer, responses=ProjecaoPoupancaResponseSerializer)
 @api_view(['POST'])
 def projecao_poupanca(request):
     logger.info("Projecao poupanca request received — data: %s", request.data)
@@ -184,7 +212,18 @@ def projecao_poupanca(request):
         return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(tags=['Lançamento'])
+@extend_schema(
+    methods=['GET'],
+    tags=['Lançamento'],
+    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
+    responses={200: EntrySerializer(many=True)},
+)
+@extend_schema(
+    methods=['POST'],
+    tags=['Lançamento'],
+    request=EntrySerializer,
+    responses={201: EntrySerializer},
+)
 @api_view(['GET', 'POST'])
 def entries(request):
     if request.method == 'POST':
@@ -225,7 +264,18 @@ def entries(request):
             return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(tags=['Lançamento'])
+@extend_schema(
+    methods=['GET'],
+    tags=['Lançamento'],
+    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
+    responses={200: ObjectiveSerializer(many=True)},
+)
+@extend_schema(
+    methods=['POST'],
+    tags=['Lançamento'],
+    request=ObjectiveSerializer,
+    responses={201: ObjectiveSerializer},
+)
 @api_view(['GET', 'POST'])
 def objectives(request):
     if request.method == 'POST':
@@ -263,7 +313,19 @@ def objectives(request):
             logger.error("Objectivo list error — %s", str(e))
             return Response({"erro": str(e)}, status=400)
 
-@extend_schema(tags=['Simulações'])
+
+@extend_schema(
+    methods=['GET'],
+    tags=['Simulações'],
+    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
+    responses={200: SimulationHistorySerializer(many=True)},
+)
+@extend_schema(
+    methods=['POST'],
+    tags=['Simulações'],
+    request=SimulationHistorySerializer,
+    responses={201: SimulationHistorySerializer},
+)
 @api_view(['GET', 'POST'])
 def simulation_history(request):
     if request.method == 'POST':
@@ -302,9 +364,7 @@ def simulation_history(request):
             return Response({"erro": str(e)}, status=400)
 
 
-
-
-
+@extend_schema(tags=['Simulações'], request=SimulateSerializer, responses={200: OpenApiTypes.OBJECT})
 @api_view(['POST'])
 def simulate(request):
     logger.info("Simulation request received — data: %s", request.data)
