@@ -179,24 +179,45 @@ def projecao_poupanca(request):
         return Response({"erro": str(e)}, status=400)
 
 
+
 @extend_schema(tags=['Lançamento'])
-@api_view(['POST'])
-def create_entry(request):
-    logger.info("Criação do entry — data: %s", request.data)
-    serializer = EntrySerializer(data=request.data)
+@api_view(['GET', 'POST'])
+def entries(request):
+    if request.method == 'POST':
+        logger.info("Criar entry — data: %s", request.data)
 
-    if not serializer.is_valid():
-        logger.warning("Invalid entry data - errors: %s", serializer.errors)
-        return Response(serializer.errors, status=400)
+        serializer = EntrySerializer(data=request.data)
 
-    try:
-        entry = Entry(**serializer.validated_data)
-        entry.save()
-        logger.info("Entry criado com sucesso - id: %s", entry.id)
-        return Response(EntrySerializer(entry).data, status=201)
+        if not serializer.is_valid():
+            logger.warning("Invalid entry data — errors: %s", serializer.errors)
+            return Response(serializer.errors, status=400)
 
+        try:
+            entry = Entry(**serializer.validated_data)
+            entry.save()
+            logger.info("Entry criado com sucesso — id: %s", entry.id)
+            return Response(EntrySerializer(entry).data, status=201)
 
-    except ValueError as e:
-        logger.error("Entry error - error: %s", str(e))
-        return Response({"erro": str(e)}, status=400)
+        except Exception as e:
+            logger.error("Entry error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
+
+    elif request.method == 'GET':
+        logger.info("Listar entries — scenario_id: %s", request.query_params.get('scenario_id'))
+
+        scenario_id = request.query_params.get('scenario_id')
+
+        if not scenario_id:
+            return Response({"erro": "scenario_id é obrigatório"}, status=400)
+
+        try:
+            entries_list = Entry.objects.filter(scenario_id=scenario_id)
+            serializer = EntrySerializer(entries_list, many=True)
+            logger.info("Entries listados — total: %s", entries_list.count())
+            return Response(serializer.data, status=200)
+
+        except Exception as e:
+            logger.error("Entry list error — %s", str(e))
+            return Response({"erro": str(e)}, status=400)
+
 
