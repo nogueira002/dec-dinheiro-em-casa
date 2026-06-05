@@ -35,7 +35,7 @@ namespace dotnet_mvc.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("varchar(16)");
 
-                    b.Property<int>("ClassroomId")
+                    b.Property<int?>("ClassroomId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -44,7 +44,7 @@ namespace dotnet_mvc.Migrations
                     b.Property<int>("CreatedByUserId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("Deadline")
+                    b.Property<DateTime?>("Deadline")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
@@ -54,6 +54,9 @@ namespace dotnet_mvc.Migrations
 
                     b.Property<bool>("NotifyStudents")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -97,6 +100,52 @@ namespace dotnet_mvc.Migrations
                         .IsUnique();
 
                     b.ToTable("ChallengeEnrollments");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.ChallengeSubmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChallengeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Feedback")
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<decimal?>("Grade")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("decimal(4,1)");
+
+                    b.Property<string>("ResponseText")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("varchar(8000)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("ChallengeId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("ChallengeSubmissions");
                 });
 
             modelBuilder.Entity("dotnet_mvc.Models.Classroom", b =>
@@ -167,6 +216,50 @@ namespace dotnet_mvc.Migrations
                     b.ToTable("ClassroomMemberships");
                 });
 
+            modelBuilder.Entity("dotnet_mvc.Models.Scenario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("InitialBalance")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<int>("MembersCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProfileType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Scenarios");
+                });
+
             modelBuilder.Entity("dotnet_mvc.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -232,8 +325,7 @@ namespace dotnet_mvc.Migrations
                     b.HasOne("dotnet_mvc.Models.Classroom", "Classroom")
                         .WithMany("Challenges")
                         .HasForeignKey("ClassroomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("dotnet_mvc.Models.User", "CreatedByUser")
                         .WithMany("CreatedChallenges")
@@ -256,6 +348,25 @@ namespace dotnet_mvc.Migrations
 
                     b.HasOne("dotnet_mvc.Models.User", "Student")
                         .WithMany("ChallengeEnrollments")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Challenge");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.ChallengeSubmission", b =>
+                {
+                    b.HasOne("dotnet_mvc.Models.Challenge", "Challenge")
+                        .WithMany("Submissions")
+                        .HasForeignKey("ChallengeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("dotnet_mvc.Models.User", "Student")
+                        .WithMany("ChallengeSubmissions")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -295,9 +406,22 @@ namespace dotnet_mvc.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("dotnet_mvc.Models.Scenario", b =>
+                {
+                    b.HasOne("dotnet_mvc.Models.User", "Owner")
+                        .WithMany("Scenarios")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("dotnet_mvc.Models.Challenge", b =>
                 {
                     b.Navigation("Enrollments");
+
+                    b.Navigation("Submissions");
                 });
 
             modelBuilder.Entity("dotnet_mvc.Models.Classroom", b =>
@@ -311,11 +435,15 @@ namespace dotnet_mvc.Migrations
                 {
                     b.Navigation("ChallengeEnrollments");
 
+                    b.Navigation("ChallengeSubmissions");
+
                     b.Navigation("ClassroomMemberships");
 
                     b.Navigation("CreatedChallenges");
 
                     b.Navigation("ManagedClassrooms");
+
+                    b.Navigation("Scenarios");
                 });
 #pragma warning restore 612, 618
         }

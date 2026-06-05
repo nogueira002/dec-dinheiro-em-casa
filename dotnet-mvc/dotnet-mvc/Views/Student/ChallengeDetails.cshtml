@@ -1,0 +1,133 @@
+@model dotnet_mvc.ViewModels.Student.StudentChallengeDetailsViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["PageTitle"] = "Detalhe do desafio";
+    ViewData["Role"] = "Student";
+    ViewData["ActiveMenu"] = "challenges";
+    Layout = "_DashboardLayout";
+
+    string statusBadge = Model.StatusKey switch
+    {
+        "expired" => $"<span class=\"badge badge--danger\">{Model.StatusLabel}</span>",
+        "pending" => $"<span class=\"badge badge--warning\">{Model.StatusLabel}</span>",
+        "submitted" => $"<span class=\"badge badge--info\">{Model.StatusLabel}</span>",
+        "graded" => $"<span class=\"badge badge--success\">{Model.StatusLabel}</span>",
+        _ => $"<span class=\"badge badge--neutral\">{Model.StatusLabel}</span>"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">@Model.Title</h1>
+        <p class="page-header__subtitle">Consulta o enunciado, acompanha o estado e entrega a tua resposta.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">← Voltar aos desafios</a>
+    </div>
+</div>
+
+<div style="display: grid; gap: var(--space-6); max-width: 880px;">
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Resumo do desafio</h2>
+                <p class="card__subtitle">@Model.Professor · @Model.ClassroomName</p>
+            </div>
+            @Html.Raw(statusBadge)
+        </div>
+
+        <div class="challenge-card__meta" style="margin-bottom: var(--space-5);">
+            <div class="scenario-card__row">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Entrega até: <strong>@Model.Deadline.ToString("dd 'de' MMMM 'de' yyyy")</strong>
+            </div>
+            @if (Model.SubmittedAtUtc.HasValue)
+            {
+                <div class="scenario-card__row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10m-13 9h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z"/></svg>
+                    Submetido em: <strong>@Model.SubmittedAtUtc.Value.ToString("dd/MM/yyyy 'às' HH:mm")</strong>
+                </div>
+            }
+            @if (Model.UpdatedAtUtc.HasValue && Model.UpdatedAtUtc != Model.SubmittedAtUtc)
+            {
+                <div class="scenario-card__row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+                    Última atualização: <strong>@Model.UpdatedAtUtc.Value.ToString("dd/MM/yyyy 'às' HH:mm")</strong>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.GradeDisplay))
+            {
+                <div class="scenario-card__row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Nota: <strong style="color: var(--color-success);">@Model.GradeDisplay</strong>
+                </div>
+            }
+        </div>
+
+        <div style="white-space: pre-line; color: var(--color-gray-700); line-height: 1.7;">
+            @Model.Description
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Feedback))
+    {
+        <div class="alert alert--info">
+            <span>ℹ</span>
+            <div>
+                <strong>Feedback do professor:</strong><br />
+                @Model.Feedback
+            </div>
+        </div>
+    }
+
+    @if (!Model.CanEditSubmission && !Model.HasSubmission)
+    {
+        <div class="alert alert--danger">
+            <span>!</span>
+            <div>O prazo de entrega terminou e já não é possível submeter uma resposta para este desafio.</div>
+        </div>
+    }
+
+    <form asp-controller="Student" asp-action="ChallengeDetails" asp-route-id="@Model.Id" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+        <div class="card">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">A tua resposta</h2>
+                    <p class="card__subtitle">
+                        @(Model.CanEditSubmission
+                            ? "Podes escrever ou atualizar a tua resposta até ao fim do prazo."
+                            : "A tua resposta ficou em modo de consulta.")
+                    </p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ResponseText" class="form-label form-label--required"></label>
+                <textarea asp-for="ResponseText"
+                          class="form-textarea"
+                          rows="12"
+                          placeholder="Explica o teu raciocínio, os cálculos e a decisão tomada."
+                          readonly="@(!Model.CanEditSubmission)"></textarea>
+                <span asp-validation-for="ResponseText" class="field-validation-error"></span>
+                <span class="form-hint">Descreve a solução com clareza suficiente para o professor acompanhar o teu raciocínio.</span>
+            </div>
+
+            <div class="form-actions">
+                @if (Model.CanEditSubmission)
+                {
+                    <button type="submit" class="btn btn--primary btn--lg">
+                        @(Model.HasSubmission ? "Guardar alterações" : "Submeter resposta")
+                    </button>
+                }
+                <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">Voltar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

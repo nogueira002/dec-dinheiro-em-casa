@@ -1,0 +1,117 @@
+@model dotnet_mvc.ViewModels.Professor.ProfessorChallengesIndexViewModel
+
+@{
+    ViewData["Title"] = "Desafios";
+    Layout = "_DashboardLayout";
+
+    string StatusBadge(string key, string label) => key switch
+    {
+        "draft" => $"<span class=\"badge badge--info\">{label}</span>",
+        "expired" => $"<span class=\"badge badge--danger\">{label}</span>",
+        _ => $"<span class=\"badge badge--success\">{label}</span>"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Desafios pedagógicos</h1>
+        <p class="page-header__subtitle">Cria o enunciado, acompanha o estado e atribui os desafios às turmas certas.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--outline" asp-controller="Professor" asp-action="AssignChallenge">Atribuir desafio</a>
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateChallenge">Novo desafio</a>
+    </div>
+</div>
+
+<div class="grid grid--3 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">★</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Total</div>
+            <div class="stat-card__value">@Model.Challenges.Count</div>
+            <div class="stat-card__hint">Desafios criados</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">✎</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Rascunhos</div>
+            <div class="stat-card__value">@Model.DraftCount</div>
+            <div class="stat-card__hint">Ainda por atribuir</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">✓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Atribuídos</div>
+            <div class="stat-card__value">@Model.PublishedCount</div>
+            <div class="stat-card__hint">Já ligados a turmas</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Challenges.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">🏆</div>
+        <div class="empty-state__title">Ainda não tens desafios criados</div>
+        <p class="empty-state__text">Cria o primeiro desafio pedagógico e depois atribui-o a uma turma.</p>
+        <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateChallenge">Criar primeiro desafio</a>
+    </div>
+}
+else
+{
+    <div class="grid grid--auto-md">
+        @foreach (var challenge in Model.Challenges)
+        {
+            <article class="challenge-card">
+                <div class="challenge-card__header">
+                    <div>
+                        <h3 class="challenge-card__title">@challenge.Title</h3>
+                        <p class="text-sm text-muted mt-1">Código: <strong>@challenge.AccessCode</strong></p>
+                    </div>
+                    @Html.Raw(StatusBadge(challenge.StatusKey, challenge.StatusLabel))
+                </div>
+
+                <p class="text-sm" style="color: var(--color-gray-700);">@challenge.Description</p>
+
+                <div class="challenge-card__meta">
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        @(string.IsNullOrWhiteSpace(challenge.ClassroomName) ? "Sem turma atribuída" : challenge.ClassroomName)
+                    </div>
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                        Criado em <strong>@challenge.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</strong>
+                    </div>
+                    @if (challenge.Deadline.HasValue)
+                    {
+                        <div class="scenario-card__row">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+                            Entrega: <strong>@challenge.Deadline.Value.ToString("dd/MM/yyyy")</strong>
+                        </div>
+                    }
+                    @if (challenge.StatusKey != "draft")
+                    {
+                        <div class="scenario-card__row">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                            <strong>@challenge.AudienceCount</strong> alunos com acesso
+                        </div>
+                    }
+                </div>
+
+                <div class="card__footer">
+                    <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="EditChallenge" asp-route-id="@challenge.Id">Editar</a>
+                    @if (challenge.CanAssign)
+                    {
+                        <a class="btn btn--primary btn--sm" asp-controller="Professor" asp-action="AssignChallenge" asp-route-challengeId="@challenge.Id">Atribuir</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Classes">Ver turma</a>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+}

@@ -11,10 +11,12 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<Scenario> Scenarios { get; set; }
     public DbSet<Classroom> Classrooms { get; set; }
     public DbSet<ClassroomMembership> ClassroomMemberships { get; set; }
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<ChallengeEnrollment> ChallengeEnrollments { get; set; }
+    public DbSet<ChallengeSubmission> ChallengeSubmissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,6 +32,18 @@ public class AppDbContext : DbContext
             entity.Property(u => u.Role).HasMaxLength(32);
             entity.Property(u => u.UserStatus).HasMaxLength(32);
             entity.Property(u => u.SessionTokenHash).HasMaxLength(128);
+        });
+
+        modelBuilder.Entity<Scenario>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(120);
+            entity.Property(x => x.Location).HasMaxLength(120);
+            entity.Property(x => x.InitialBalance).HasPrecision(12, 2);
+
+            entity.HasOne(x => x.Owner)
+                .WithMany(x => x.Scenarios)
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Classroom>(entity =>
@@ -91,6 +105,25 @@ public class AppDbContext : DbContext
 
             entity.HasOne(x => x.Student)
                 .WithMany(x => x.ChallengeEnrollments)
+                .HasForeignKey(x => x.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChallengeSubmission>(entity =>
+        {
+            entity.HasIndex(x => new { x.ChallengeId, x.StudentId }).IsUnique();
+
+            entity.Property(x => x.ResponseText).HasMaxLength(8000);
+            entity.Property(x => x.Feedback).HasMaxLength(4000);
+            entity.Property(x => x.Grade).HasPrecision(4, 1);
+
+            entity.HasOne(x => x.Challenge)
+                .WithMany(x => x.Submissions)
+                .HasForeignKey(x => x.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Student)
+                .WithMany(x => x.ChallengeSubmissions)
                 .HasForeignKey(x => x.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

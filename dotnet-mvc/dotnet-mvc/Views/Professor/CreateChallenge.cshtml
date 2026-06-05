@@ -1,25 +1,31 @@
 @model dotnet_mvc.ViewModels.Professor.CreateChallengeViewModel
 
 @{
-    ViewData["Title"] = "Criar desafio";
-    ViewData["PageTitle"] = "Criar desafio";
-    ViewData["Role"] = "Professor";
-    ViewData["ActiveMenu"] = "create-challenge";
+    var pageTitle = Model.IsEditMode ? "Editar desafio" : "Criar desafio";
+    var headerTitle = Model.IsEditMode ? "Editar desafio pedagógico" : "Criar novo desafio pedagógico";
+    var headerSubtitle = Model.IsEditMode
+        ? "Atualiza o enunciado do desafio antes ou depois da atribuição."
+        : "Define o enunciado e deixa o desafio pronto para ser atribuído a uma turma.";
+    var submitLabel = Model.IsEditMode ? "Guardar alterações" : "Guardar desafio";
+    var cancelAction = Model.IsEditMode ? "Challenges" : "Challenges";
+    ViewData["Title"] = pageTitle;
+    ViewData["PageTitle"] = pageTitle;
+    ViewData["ActiveMenu"] = Model.IsEditMode ? "challenges" : "create-challenge";
     Layout = "_DashboardLayout";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-header__title">Criar novo desafio</h1>
-        <p class="page-header__subtitle">Define o desafio que vais atribuir aos teus alunos.</p>
+        <h1 class="page-header__title">@headerTitle</h1>
+        <p class="page-header__subtitle">@headerSubtitle</p>
     </div>
     <div class="page-header__actions">
-        <a class="btn btn--ghost" asp-controller="Professor" asp-action="Classes">← Voltar</a>
+        <a class="btn btn--ghost" asp-controller="Professor" asp-action="@cancelAction">← Voltar</a>
     </div>
 </div>
 
 <div style="max-width: 720px;">
-    <form asp-controller="Professor" asp-action="CreateChallenge" method="post" novalidate>
+    <form asp-controller="Professor" asp-action="@(Model.IsEditMode ? "EditChallenge" : "CreateChallenge")" asp-route-id="@Model.Id" method="post" novalidate>
         <input asp-for="GeneratedCodePreview" type="hidden" />
 
         <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
@@ -28,7 +34,7 @@
             <div class="card__header">
                 <div>
                     <h2 class="card__title">Conteúdo do desafio</h2>
-                    <p class="card__subtitle">O que queres que os alunos façam?</p>
+                    <p class="card__subtitle">Define o contexto, a tarefa e o que será esperado na resposta.</p>
                 </div>
             </div>
 
@@ -56,53 +62,24 @@
         <div class="card mb-6">
             <div class="card__header">
                 <div>
-                    <h2 class="card__title">Atribuição</h2>
-                    <p class="card__subtitle">A que turma vais atribuir este desafio?</p>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label asp-for="ClassId" class="form-label form-label--required"></label>
-                    <select asp-for="ClassId" asp-items="Model.AvailableClasses" class="form-select" required>
-                        <option value="">— Escolher turma —</option>
-                    </select>
-                    <span asp-validation-for="ClassId" class="field-validation-error"></span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="Deadline" class="form-label form-label--required"></label>
-                    <input asp-for="Deadline"
-                           class="form-control"
-                           type="date"
-                           required />
-                    <span asp-validation-for="Deadline" class="field-validation-error"></span>
-                </div>
-            </div>
-
-            <div class="form-check">
-                <input asp-for="NotifyStudents" />
-                <label asp-for="NotifyStudents"></label>
-            </div>
-        </div>
-
-        <div class="card mb-6">
-            <div class="card__header">
-                <div>
-                    <h2 class="card__title">Código de adesão</h2>
-                    <p class="card__subtitle">Vai ser gerado automaticamente após criares o desafio.</p>
+                    <h2 class="card__title">Código pedagógico</h2>
+                    <p class="card__subtitle">Este código fica reservado ao desafio e será usado quando o atribuíres.</p>
                 </div>
             </div>
 
             <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background-color: var(--color-primary-light); border-radius: var(--radius-md);">
                 <span class="join-code" style="font-size: 1.2rem;">@Model.GeneratedCodePreview</span>
-                <span class="text-sm text-muted">(pré-visualização)</span>
+                <span class="text-sm text-muted">@(Model.IsEditMode ? "(código atual)" : "(pré-visualização)")</span>
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn--primary btn--lg">Atribuir desafio</button>
-            <a class="btn btn--ghost" asp-controller="Professor" asp-action="Classes">Cancelar</a>
+            <button type="submit" class="btn btn--primary btn--lg">@submitLabel</button>
+            @if (!Model.IsEditMode)
+            {
+                <a class="btn btn--outline" asp-controller="Professor" asp-action="AssignChallenge">Atribuir desafio existente</a>
+            }
+            <a class="btn btn--ghost" asp-controller="Professor" asp-action="@cancelAction">Cancelar</a>
         </div>
     </form>
 </div>

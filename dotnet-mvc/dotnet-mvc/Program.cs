@@ -1,5 +1,7 @@
 using dotnet_mvc.Security;
 using dotnet_mvc.Services.Academic;
+using dotnet_mvc.Services.Dashboard;
+using dotnet_mvc.Services.Scenarios;
 using Microsoft.EntityFrameworkCore;
 using dotnet_mvc.Data;
 using dotnet_mvc.Models;
@@ -32,6 +34,8 @@ builder.Services.AddScoped<ISessionTokenService, SessionTokenService>();
 builder.Services.AddScoped<CookieSessionValidator>();
 builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
 builder.Services.AddScoped<IAcademicManagementService, AcademicManagementService>();
+builder.Services.AddScoped<IStudentDashboardService, StudentDashboardService>();
+builder.Services.AddScoped<IScenarioService, ScenarioService>();
 
 builder.Services
     .AddAuthentication(AuthConstants.AuthenticationScheme)
