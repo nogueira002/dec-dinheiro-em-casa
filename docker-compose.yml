@@ -12,8 +12,12 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=${MYSQL_DB};user=${MYSQL_USER};password=${MYSQL_PASSWORD}"
+      # URL da API de cálculo financeiro pela rede interna Docker (nome do serviço).
+      FinanceApi__BaseUrl: "http://django-api:8000/api/"
     depends_on:
       mysql:
+        condition: service_healthy
+      django-api:
         condition: service_healthy
     networks:
       - internal

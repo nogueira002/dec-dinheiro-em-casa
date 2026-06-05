@@ -1,11 +1,10 @@
+@using System.Globalization
+@model dotnet_mvc.ViewModels.Student.SimulationViewModel
 @{
     ViewData["Title"] = "Simulações";
-    ViewData["PageTitle"] = "Simulações financeiras";
-    ViewData["Role"] = "Student";
-    ViewData["ActiveMenu"] = "simulations";
-    ViewData["UserName"] = "Maria Costa";
-    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
     Layout = "_DashboardLayout";
+    var pt = CultureInfo.GetCultureInfo("pt-PT");
+    string Money(decimal v) => string.Format(pt, "{0:N2} €", v);
 }
 
 <div class="page-header">
@@ -14,6 +13,14 @@
         <p class="page-header__subtitle">Compara estratégias e descobre o impacto a longo prazo.</p>
     </div>
 </div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert--danger mb-6">
+        <span>⚠️</span>
+        <div>@Model.ErrorMessage</div>
+    </div>
+}
 
 <div class="grid" style="grid-template-columns: 1fr 2fr; gap: var(--space-6);">
 
@@ -26,36 +33,71 @@
             </div>
         </div>
 
-        <form>
+        <form asp-controller="Student" asp-action="Simulations" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <div class="form-group">
-                <label class="form-label" for="Scenario">Cenário</label>
-                <select class="form-select" id="Scenario" name="Scenario">
-                    <option>Família Costa</option>
-                    <option>Estudante em Coimbra</option>
-                    <option>A Joana</option>
+                <label class="form-label" asp-for="ScenarioId">Cenário</label>
+                <select class="form-select" asp-for="ScenarioId">
+                    <option value="">— Sem cenário associado —</option>
+                    @foreach (var scenario in Model.Scenarios)
+                    {
+                        <option value="@scenario.Id">@scenario.Name</option>
+                    }
                 </select>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="Months">Período (meses)</label>
-                <input class="form-control" type="number" id="Months" name="Months" min="3" max="120" value="24" />
+                <label class="form-label" asp-for="RendimentoMensal">Rendimento mensal (€)</label>
+                <input class="form-control" type="number" step="0.01" min="0" asp-for="RendimentoMensal" />
+                <span class="text-danger" asp-validation-for="RendimentoMensal"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="DespesasMensais">Despesas mensais (€)</label>
+                <input class="form-control" type="number" step="0.01" min="0" asp-for="DespesasMensais" />
+                <span class="text-danger" asp-validation-for="DespesasMensais"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="EncargosFixos">Encargos fixos (€)</label>
+                <input class="form-control" type="number" step="0.01" min="0" asp-for="EncargosFixos" />
+                <span class="text-danger" asp-validation-for="EncargosFixos"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="CapitalPoupanca">Capital para poupança (€)</label>
+                <input class="form-control" type="number" step="0.01" min="0" asp-for="CapitalPoupanca" />
+                <span class="text-danger" asp-validation-for="CapitalPoupanca"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Emprestimo">Empréstimo (€)</label>
+                <input class="form-control" type="number" step="0.01" min="0" asp-for="Emprestimo" />
+                <span class="text-danger" asp-validation-for="Emprestimo"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Meses">Período (meses)</label>
+                <input class="form-control" type="number" asp-for="Meses" min="3" max="120" />
+                <span class="text-danger" asp-validation-for="Meses"></span>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Estratégia</label>
                 <div style="display: flex; flex-direction: column; gap: var(--space-2);">
                     <label class="option-card">
-                        <input type="radio" name="Strategy" value="conservadora" />
+                        <input type="radio" asp-for="Strategy" value="conservative" />
                         <div class="option-card__title">🛡️ Conservadora</div>
                         <div class="option-card__desc">Risco baixo · retorno previsível</div>
                     </label>
                     <label class="option-card">
-                        <input type="radio" name="Strategy" value="moderada" checked />
+                        <input type="radio" asp-for="Strategy" value="moderate" />
                         <div class="option-card__title">⚖️ Moderada</div>
                         <div class="option-card__desc">Equilíbrio entre risco e retorno</div>
                     </label>
                     <label class="option-card">
-                        <input type="radio" name="Strategy" value="agressiva" />
+                        <input type="radio" asp-for="Strategy" value="aggressive" />
                         <div class="option-card__title">🚀 Agressiva</div>
                         <div class="option-card__desc">Risco alto · retorno potencial elevado</div>
                     </label>
@@ -72,60 +114,81 @@
 
     @* ===== Resultados ===== *@
     <div>
-        <div class="grid grid--2 mb-6">
-            <div class="result-card">
-                <div class="result-card__label">Valor final estimado</div>
-                <div class="result-card__value">14.250,00 €</div>
-                <div class="result-card__hint">após 24 meses</div>
-            </div>
-            <div class="result-card result-card--neutral">
-                <div class="result-card__label">Taxa de esforço</div>
-                <div class="result-card__value text-primary">28%</div>
-                <div class="result-card__hint">Saudável (limite 40%)</div>
-            </div>
-            <div class="result-card result-card--neutral">
-                <div class="result-card__label">Break-even</div>
-                <div class="result-card__value">9 meses</div>
-                <div class="result-card__hint">Tempo até recuperar o investimento</div>
-            </div>
-            <div class="result-card result-card--neutral">
-                <div class="result-card__label">Custo do crédito</div>
-                <div class="result-card__value">1.840,50 €</div>
-                <div class="result-card__hint">Juros pagos no período</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card__header">
-                <h2 class="card__title">Projeção de evolução</h2>
-                <span class="badge badge--info">Estratégia moderada</span>
-            </div>
-
-            <div class="chart-placeholder">
-                <svg class="chart-placeholder__line" viewBox="0 0 600 240" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="simGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#2da7df" stop-opacity="0.4"/>
-                            <stop offset="100%" stop-color="#2da7df" stop-opacity="0"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M0,200 Q100,180 150,160 T300,110 T450,70 T600,40 L600,240 L0,240 Z"
-                          fill="url(#simGrad)" />
-                    <path d="M0,200 Q100,180 150,160 T300,110 T450,70 T600,40"
-                          stroke="#0C73B7" stroke-width="3" fill="none" stroke-linecap="round" />
-                </svg>
-                <div class="chart-placeholder__label">Crescimento estimado de 142% em 24 meses</div>
-            </div>
-
-            <div class="alert alert--info mt-6">
-                <span>💡</span>
-                <div>
-                    <strong>Sugestão:</strong> Com a estratégia moderada, conseguirias
-                    atingir o teu objetivo de poupança 4 meses mais cedo se aumentasses
-                    em 10% a quota mensal.
+        @if (!Model.HasResult)
+        {
+            <div class="card">
+                <div class="chart-placeholder">
+                    <div class="chart-placeholder__label">
+                        Preenche os parâmetros e calcula uma simulação para ver os resultados.
+                    </div>
                 </div>
             </div>
-        </div>
+        }
+        else
+        {
+            var result = Model.Result!;
+            <div class="grid grid--2 mb-6">
+                <div class="result-card">
+                    <div class="result-card__label">Valor final acumulado</div>
+                    <div class="result-card__value">
+                        @(result.Capitalizacao is not null ? Money(result.Capitalizacao.MontanteFinal) : "—")
+                    </div>
+                    <div class="result-card__hint">
+                        @(result.Capitalizacao is not null
+                            ? $"Juros gerados: {Money(result.Capitalizacao.JurosGerados)} em {Model.Meses} meses"
+                            : "Sem capital de poupança a simular")
+                    </div>
+                </div>
+                <div class="result-card result-card--neutral">
+                    <div class="result-card__label">Taxa de esforço</div>
+                    <div class="result-card__value text-primary">
+                        @(result.TaxaEsforco is not null ? $"{result.TaxaEsforco.TaxaEsforco.ToString("0.##", pt)}%" : "—")
+                    </div>
+                    <div class="result-card__hint">@(result.TaxaEsforco?.Classificacao ?? "—")</div>
+                </div>
+                <div class="result-card result-card--neutral">
+                    <div class="result-card__label">Break-even</div>
+                    <div class="result-card__value">
+                        @(result.Projecao?.BreakEvenMes is int be ? $"{be} meses" : "Não atingido")
+                    </div>
+                    <div class="result-card__hint">Mês em que a poupança acumulada fica positiva</div>
+                </div>
+                <div class="result-card result-card--neutral">
+                    <div class="result-card__label">Custo total do crédito</div>
+                    <div class="result-card__value">
+                        @(result.Credito is not null ? Money(result.Credito.CustoTotal) : "—")
+                    </div>
+                    <div class="result-card__hint">
+                        @(result.Credito is not null
+                            ? $"Prestação: {Money(result.Credito.PrestacaoMensal)}/mês · Juros: {Money(result.Credito.JurosTotais)}"
+                            : "Sem empréstimo a simular")
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card__header">
+                    <h2 class="card__title">Projeção de poupança</h2>
+                    <span class="badge badge--info">Estratégia @result.Strategy</span>
+                </div>
+
+                @if (result.Projecao is not null)
+                {
+                    <div class="grid grid--2">
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Poupança acumulada</div>
+                            <div class="result-card__value">@Money(result.Projecao.PoupancaAcumulada)</div>
+                            <div class="result-card__hint">ao fim de @Model.Meses meses (com inflação nas despesas)</div>
+                        </div>
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Saldo médio mensal</div>
+                            <div class="result-card__value">@Money(result.Projecao.SaldoMedioMensal)</div>
+                            <div class="result-card__hint">rendimento menos despesas ajustadas</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
 </div>

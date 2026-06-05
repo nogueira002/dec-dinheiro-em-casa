@@ -1,6 +1,7 @@
 using dotnet_mvc.Security;
 using dotnet_mvc.Services.Academic;
 using dotnet_mvc.Services.Dashboard;
+using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
 using Microsoft.EntityFrameworkCore;
 using dotnet_mvc.Data;
@@ -36,6 +37,16 @@ builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
 builder.Services.AddScoped<IAcademicManagementService, AcademicManagementService>();
 builder.Services.AddScoped<IStudentDashboardService, StudentDashboardService>();
 builder.Services.AddScoped<IScenarioService, ScenarioService>();
+
+// Cliente HTTP tipado para o microserviço de cálculo financeiro (API Django).
+// O portal NÃO calcula localmente — delega na API, conforme a arquitetura do sistema.
+var financeApiBaseUrl = builder.Configuration["FinanceApi:BaseUrl"]
+    ?? throw new InvalidOperationException("A configuração 'FinanceApi:BaseUrl' não está definida.");
+builder.Services.AddHttpClient<IFinanceApiClient, FinanceApiClient>(client =>
+{
+    client.BaseAddress = new Uri(financeApiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 builder.Services
     .AddAuthentication(AuthConstants.AuthenticationScheme)

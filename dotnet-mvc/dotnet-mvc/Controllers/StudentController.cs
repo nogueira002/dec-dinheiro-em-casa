@@ -2,6 +2,7 @@ using dotnet_mvc.Extensions;
 using dotnet_mvc.Security;
 using dotnet_mvc.Services.Academic;
 using dotnet_mvc.Services.Dashboard;
+using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
 using dotnet_mvc.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
@@ -15,15 +16,18 @@ public class StudentController : AuthenticatedControllerBase
     private readonly IAcademicManagementService _academicManagementService;
     private readonly IStudentDashboardService _studentDashboardService;
     private readonly IScenarioService _scenarioService;
+    private readonly IFinanceApiClient _financeApiClient;
 
     public StudentController(
         IAcademicManagementService academicManagementService,
         IStudentDashboardService studentDashboardService,
-        IScenarioService scenarioService)
+        IScenarioService scenarioService,
+        IFinanceApiClient financeApiClient)
     {
         _academicManagementService = academicManagementService;
         _studentDashboardService = studentDashboardService;
         _scenarioService = scenarioService;
+        _financeApiClient = financeApiClient;
     }
 
     public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
@@ -175,10 +179,62 @@ public class StudentController : AuthenticatedControllerBase
         return View();
     }
 
-    public IActionResult Simulations()
+    public async Task<IActionResult> Simulations(CancellationToken cancellationToken)
     {
         ApplyDashboardContext("Simulações", "simulations", UserRoles.Student);
-        return View();
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var model = new SimulationViewModel
+        {
+            Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken)
+        };
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Simulations(SimulationViewModel model, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Simulações", "simulations", UserRoles.Student);
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue)
+        {
+            return Forbid();
+        }
+
+        // Recarrega o dropdown de cenários para reapresentar o formulário.
+        model.Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken);
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        // Delega o cálculo na API Django (que invoca o motor Python). O portal não calcula.
+        var result = await _financeApiClient.SimulateAsync(new SimulationRequest
+        {
+            Strategy = model.Strategy,
+            ScenarioId = model.ScenarioId ?? 0,
+            RendimentoMensal = model.RendimentoMensal,
+            DespesasMensais = model.DespesasMensais,
+            EncargosFixos = model.EncargosFixos,
+            CapitalPoupanca = model.CapitalPoupanca,
+            Emprestimo = model.Emprestimo,
+            Meses = model.Meses
+        }, cancellationToken);
+
+        if (result is null)
+        {
+            model.ErrorMessage = "Não foi possível obter a simulação. Tenta novamente dentro de momentos.";
+        }
+
+        model.Result = result;
+        return View(model);
     }
 
     public IActionResult Objectives()
