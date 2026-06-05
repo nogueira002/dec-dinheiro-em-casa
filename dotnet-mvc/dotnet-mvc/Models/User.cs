@@ -23,5 +23,7 @@ public class User
     public ICollection<Classroom> ManagedClassrooms { get; set; } = [];
     public ICollection<ClassroomMembership> ClassroomMemberships { get; set; } = [];
     public ICollection<ChallengeEnrollment> ChallengeEnrollments { get; set; } = [];
+    public ICollection<ChallengeSubmission> ChallengeSubmissions { get; set; } = [];
     public ICollection<Challenge> CreatedChallenges { get; set; } = [];
+    public ICollection<Scenario> Scenarios { get; set; } = [];
 }

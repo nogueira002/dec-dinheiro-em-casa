@@ -1,0 +1,90 @@
+@model dotnet_mvc.ViewModels.Professor.AssignChallengeViewModel
+
+@{
+    ViewData["Title"] = "Atribuir desafio";
+    ViewData["PageTitle"] = "Atribuir desafio";
+    ViewData["ActiveMenu"] = "challenges";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Atribuir desafio a uma turma</h1>
+        <p class="page-header__subtitle">Seleciona um desafio criado, escolhe a turma e define o prazo de entrega.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Professor" asp-action="Challenges">← Voltar</a>
+    </div>
+</div>
+
+<div style="max-width: 760px;">
+    <form asp-controller="Professor" asp-action="AssignChallenge" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Seleção</h2>
+                    <p class="card__subtitle">Só aparecem desafios ainda não atribuídos.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ChallengeId" class="form-label form-label--required"></label>
+                <select asp-for="ChallengeId" asp-items="Model.AvailableChallenges" class="form-select" required>
+                    <option value="">— Escolher desafio —</option>
+                </select>
+                <span asp-validation-for="ChallengeId" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ClassId" class="form-label form-label--required"></label>
+                <select asp-for="ClassId" asp-items="Model.AvailableClasses" class="form-select" required>
+                    <option value="">— Escolher turma —</option>
+                </select>
+                <span asp-validation-for="ClassId" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Deadline" class="form-label form-label--required"></label>
+                <input asp-for="Deadline" class="form-control" type="date" required />
+                <span asp-validation-for="Deadline" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="NotifyStudents" />
+                <label asp-for="NotifyStudents"></label>
+            </div>
+        </div>
+
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Código do desafio</h2>
+                    <p class="card__subtitle">O código mantém-se igual depois da atribuição.</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ChallengeCode))
+            {
+                <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background-color: var(--color-primary-light); border-radius: var(--radius-md);">
+                    <span class="join-code" style="font-size: 1.2rem;">@Model.ChallengeCode</span>
+                    <span class="text-sm text-muted">@Model.ChallengeTitle</span>
+                </div>
+            }
+            else
+            {
+                <p class="text-sm text-muted">Escolhe primeiro um desafio para ver o respetivo código.</p>
+            }
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Atribuir desafio</button>
+            <a class="btn btn--ghost" asp-controller="Professor" asp-action="Challenges">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

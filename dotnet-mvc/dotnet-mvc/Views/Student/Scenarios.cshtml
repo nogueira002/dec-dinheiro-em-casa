@@ -1,19 +1,8 @@
+@model dotnet_mvc.ViewModels.Student.StudentScenariosIndexViewModel
+
 @{
     ViewData["Title"] = "Cenários familiares";
-    ViewData["PageTitle"] = "Cenários familiares";
-    ViewData["Role"] = "Student";
-    ViewData["ActiveMenu"] = "scenarios";
-    ViewData["UserName"] = "Maria Costa";
-    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
     Layout = "_DashboardLayout";
-
-    // placeholder: lista de cenários (alterar para new[]{} para ver estado vazio)
-    var scenarios = new[]
-    {
-        new { Name = "Família Costa", Type = "Casal com filhos", Members = 4, Balance = "1.850,00 €", Location = "Lisboa" },
-        new { Name = "Estudante em Coimbra", Type = "Estudante deslocado", Members = 1, Balance = "620,00 €", Location = "Coimbra" },
-        new { Name = "A Joana", Type = "Família monoparental", Members = 2, Balance = "1.120,00 €", Location = "Porto" }
-    };
 }
 
 <div class="page-header">
@@ -29,7 +18,7 @@
     </div>
 </div>
 
-@if (scenarios.Length == 0)
+@if (Model.Scenarios.Count == 0)
 {
     <div class="empty-state">
         <div class="empty-state__icon">🏠</div>
@@ -46,14 +35,14 @@
 else
 {
     <div class="grid grid--auto-md">
-        @foreach (var s in scenarios)
+        @foreach (var s in Model.Scenarios)
         {
             <article class="scenario-card">
                 <div class="scenario-card__header">
                     <div>
                         <h3 class="scenario-card__title">@s.Name</h3>
                         <div class="scenario-card__meta mt-1">
-                            <span class="badge badge--primary">@s.Type</span>
+                            <span class="badge badge--primary">@s.ProfileTypeLabel</span>
                         </div>
                     </div>
                 </div>
@@ -65,20 +54,21 @@ else
                     </div>
                     <div class="scenario-card__row">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                        @s.Members membros
+                        @s.MembersCount membro@(s.MembersCount == 1 ? "" : "s")
                     </div>
                     <div class="scenario-card__row">
-                        <strong style="color: var(--color-primary); font-size: 1.1rem;">@s.Balance</strong>
+                        <strong style="color: var(--color-primary); font-size: 1.1rem;">@s.InitialBalance.ToString("N2") €</strong>
                         <span class="text-sm text-muted">saldo inicial</span>
+                    </div>
+                    <div class="scenario-card__row">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                        Atualizado em <strong>@s.UpdatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</strong>
                     </div>
                 </div>
 
                 <div class="card__footer">
-                    <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Entries">Ver detalhes</a>
-                    <button class="btn btn--ghost btn--sm text-danger"
-                            data-confirm="Apagar o cenário '@s.Name'? Esta ação não pode ser desfeita.">
-                        Apagar
-                    </button>
+                    <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="EditScenario" asp-route-id="@s.Id">Editar</a>
+                    <span class="text-sm text-muted">Criado em @s.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</span>
                 </div>
             </article>
         }

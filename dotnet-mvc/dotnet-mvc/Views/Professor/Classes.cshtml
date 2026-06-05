@@ -1,8 +1,11 @@
+@using System.Globalization
 @model dotnet_mvc.ViewModels.Professor.ClassesIndexViewModel
 
 @{
     ViewData["Title"] = "Turmas";
     Layout = "_DashboardLayout";
+
+    string WidthValue(decimal value) => value.ToString("0.#", CultureInfo.InvariantCulture);
 }
 
 <div class="page-header">
@@ -11,6 +14,9 @@
         <p class="page-header__subtitle">Consulta as tuas turmas, os desafios criados e os alunos associados.</p>
     </div>
     <div class="page-header__actions">
+        <a class="btn btn--outline" asp-controller="Professor" asp-action="Challenges">
+            Ver desafios
+        </a>
         <a class="btn btn--primary" asp-controller="Professor" asp-action="CreateClass">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Criar turma
@@ -18,7 +24,7 @@
     </div>
 </div>
 
-<div class="grid grid--3 mb-8">
+<div class="grid grid--4 mb-8">
     <div class="stat-card">
         <div class="stat-card__icon">👥</div>
         <div class="stat-card__content">
@@ -45,6 +51,15 @@
             <div class="stat-card__hint">Associados às tuas turmas/desafios</div>
         </div>
     </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">%</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Conclusão</div>
+            <div class="stat-card__value">@Model.OverallCompletionRateLabel</div>
+            <div class="stat-card__hint">@Model.TotalSubmittedChallenges entregas · @Model.TotalReviewedChallenges avaliadas</div>
+        </div>
+    </div>
 </div>
 
 @if (Model.Classes.Count == 0)
@@ -61,6 +76,12 @@ else
     <div style="display: grid; gap: var(--space-6);">
         @foreach (var c in Model.Classes)
         {
+            var classProgressBarClass = c.CompletionRatePercent >= 75
+                ? "progress__bar--success"
+                : c.CompletionRatePercent > 0
+                    ? "progress__bar--warning"
+                    : "progress__bar--danger";
+
             <article class="class-card">
                 <div class="class-card__header">
                     <div>
@@ -103,12 +124,35 @@ else
                     <div class="class-card__row">
                         <strong>@c.ClassroomStudentCount</strong> alunos na turma
                     </div>
+                    <div class="class-card__row">
+                        <strong>@c.SubmittedChallengesCount</strong> entregas submetidas
+                    </div>
+                    <div class="class-card__row">
+                        <strong>@c.ReviewedChallengesCount</strong> entregas avaliadas
+                    </div>
                     @if (c.DirectChallengeParticipantCount > 0)
                     {
                         <div class="class-card__row">
                             <strong>@c.DirectChallengeParticipantCount</strong> alunos via código de desafio
                         </div>
                     }
+                </div>
+
+                <div>
+                    <div class="progress-label">
+                        <span>Conclusão da turma</span>
+                        <strong>@c.CompletionRateLabel</strong>
+                    </div>
+                    <div class="progress progress--lg mt-2">
+                        <div class="progress__bar @classProgressBarClass" style="width: @(WidthValue(c.CompletionRatePercent))%;"></div>
+                    </div>
+                    <div class="text-sm text-muted mt-2">
+                        @c.SubmittedChallengesCount entregas de @c.ExpectedSubmissionsCount esperadas
+                        @if (!string.IsNullOrWhiteSpace(c.AverageGrade))
+                        {
+                            <text> · média @c.AverageGrade</text>
+                        }
+                    </div>
                 </div>
 
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-5);">
@@ -134,7 +178,7 @@ else
                                         <div class="activity-item__body">
                                             <div class="activity-item__title">@challenge.Title</div>
                                             <div class="activity-item__meta">
-                                                Código: <strong>@challenge.AccessCode</strong> · Entrega: @challenge.Deadline.ToString("dd/MM/yyyy")
+                                                Código: <strong>@challenge.AccessCode</strong> · Entrega: @(challenge.Deadline?.ToString("dd/MM/yyyy") ?? "Sem prazo")
                                             </div>
                                             <div class="activity-item__meta">
                                                 @challenge.AudienceCount alunos com acesso
@@ -168,6 +212,12 @@ else
                             <div class="activity-list">
                                 @foreach (var student in c.Students)
                                 {
+                                    var studentProgressBarClass = student.CompletionRatePercent >= 75
+                                        ? "progress__bar--success"
+                                        : student.CompletionRatePercent > 0
+                                            ? "progress__bar--warning"
+                                            : "progress__bar--danger";
+
                                     <div class="activity-item">
                                         <div class="activity-item__icon">@student.Name[0]</div>
                                         <div class="activity-item__body">
@@ -180,6 +230,18 @@ else
                                                     <text> · @student.ChallengeSummary</text>
                                                 }
                                             </div>
+                                            <div class="activity-item__meta" style="margin-top: var(--space-2);">
+                                                @student.SubmittedChallengesCount / @student.AvailableChallengesCount entregues ·
+                                                @student.ReviewedChallengesCount avaliadas ·
+                                                @student.CompletionRateLabel concluído
+                                                @if (!string.IsNullOrWhiteSpace(student.AverageGrade))
+                                                {
+                                                    <text> · média @student.AverageGrade</text>
+                                                }
+                                            </div>
+                                            <div class="progress progress--sm" style="margin-top: var(--space-2);">
+                                                <div class="progress__bar @studentProgressBarClass" style="width: @(WidthValue(student.CompletionRatePercent))%;"></div>
+                                            </div>
                                         </div>
                                         <span class="badge @(student.AssociationLabel == "Turma" ? "badge--success" : "badge--info")">@student.AssociationLabel</span>
                                     </div>
@@ -191,7 +253,7 @@ else
 
                 <div class="card__footer">
                     <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress" asp-route-classId="@c.Id">Ver alunos</a>
-                    <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="CreateChallenge">Criar desafio</a>
+                    <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="AssignChallenge" asp-route-classId="@c.Id">Atribuir desafio</a>
                 </div>
             </article>
         }

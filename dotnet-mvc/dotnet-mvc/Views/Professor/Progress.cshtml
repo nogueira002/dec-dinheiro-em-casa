@@ -1,14 +1,17 @@
+@using System.Globalization
 @model dotnet_mvc.ViewModels.Professor.ProfessorStudentsIndexViewModel
 
 @{
     ViewData["Title"] = "Alunos";
     Layout = "_DashboardLayout";
+
+    string WidthValue(decimal value) => value.ToString("0.#", CultureInfo.InvariantCulture);
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-header__title">Alunos associados</h1>
-        <p class="page-header__subtitle">Lista de alunos ligados às tuas turmas e desafios.</p>
+        <h1 class="page-header__title">Progresso por aluno</h1>
+        <p class="page-header__subtitle">Acompanha entregas, avaliações e taxa de conclusão nas tuas turmas e desafios.</p>
     </div>
     <div class="page-header__actions">
         <a class="btn btn--outline" asp-controller="Professor" asp-action="Classes">Ver turmas</a>
@@ -38,6 +41,44 @@
     }
 </form>
 
+<div class="grid grid--4 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">👥</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Alunos</div>
+            <div class="stat-card__value">@Model.TotalStudents</div>
+            <div class="stat-card__hint">No contexto selecionado</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">✎</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Submissões</div>
+            <div class="stat-card__value">@Model.TotalSubmittedChallenges</div>
+            <div class="stat-card__hint">De @Model.TotalAvailableChallenges desafios disponíveis</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">✓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Avaliadas</div>
+            <div class="stat-card__value">@Model.TotalReviewedChallenges</div>
+            <div class="stat-card__hint">Já com feedback/nota</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">%</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Conclusão</div>
+            <div class="stat-card__value">@Model.OverallCompletionRateLabel</div>
+            <div class="stat-card__hint">Taxa global de entrega</div>
+        </div>
+    </div>
+</div>
+
 @if (Model.Students.Count == 0)
 {
     <div class="empty-state">
@@ -59,13 +100,20 @@ else
                         <th>Aluno</th>
                         <th>Turma</th>
                         <th>Associação</th>
-                        <th>Desafios</th>
+                        <th>Progresso</th>
+                        <th>Avaliação</th>
                         <th>Associado desde</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var student in Model.Students)
                     {
+                        var progressBarClass = student.CompletionRatePercent >= 75
+                            ? "progress__bar--success"
+                            : student.CompletionRatePercent > 0
+                                ? "progress__bar--warning"
+                                : "progress__bar--danger";
+
                         <tr>
                             <td>
                                 <div style="display: flex; align-items: center; gap: var(--space-3);">
@@ -85,8 +133,26 @@ else
                                 </span>
                             </td>
                             <td>
-                                <div class="text-sm fw-medium">@student.ActiveChallengesCount ativos / @student.AvailableChallengesCount disponíveis</div>
+                                <div class="progress-label">
+                                    <span>@student.SubmittedChallengesCount / @student.AvailableChallengesCount entregues</span>
+                                    <strong>@student.CompletionRateLabel</strong>
+                                </div>
+                                <div class="progress progress--sm mt-2">
+                                    <div class="progress__bar @progressBarClass" style="width: @(WidthValue(student.CompletionRatePercent))%;"></div>
+                                </div>
+                                <div class="text-sm text-muted mt-2">
+                                    @student.MissingChallengesCount por entregar · @student.ActiveChallengesCount desafios ainda ativos
+                                </div>
                                 <div class="text-sm text-muted mt-1">@student.ChallengeSummary</div>
+                            </td>
+                            <td>
+                                <div class="text-sm fw-medium">@student.ReviewedChallengesCount avaliados</div>
+                                <div class="text-sm text-muted mt-1">
+                                    @(student.SubmittedChallengesCount - student.ReviewedChallengesCount) pendentes de revisão
+                                </div>
+                                <div class="text-sm text-muted mt-1">
+                                    Média: <strong>@(student.AverageGrade ?? "Sem nota")</strong>
+                                </div>
                             </td>
                             <td>@student.JoinedAtUtc.ToString("dd/MM/yyyy")</td>
                         </tr>
