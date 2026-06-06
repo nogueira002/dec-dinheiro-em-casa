@@ -374,7 +374,9 @@ def simulate(request):
         logger.warning("Invalid simulation data — errors: %s", serializer.errors)
         return Response(serializer.errors, status=400)
 
-    strategy_type = serializer.validated_data['strategy']
+    # Usa os dados já validados e convertidos (float/int) em vez de request.data cru.
+    data = serializer.validated_data
+    strategy_type = data['strategy']
     logger.debug("Strategy selected: %s", strategy_type)
 
     if strategy_type == 'conservative':
@@ -384,16 +386,22 @@ def simulate(request):
     else:
         strategy = ModerateStrategy()
 
-    result = strategy.simulate(request.data)
+    # Erros de regra de negócio (ex.: rendimento <= 0) devolvem 400 com mensagem
+    # clara para o portal, em vez de rebentarem num 500.
+    try:
+        result = strategy.simulate(data)
+    except ValueError as e:
+        logger.warning("Dados de simulação inválidos — %s", str(e))
+        return Response({"erro": str(e)}, status=400)
 
     # Guarda automaticamente no histórico
     try:
         SimulationHistory(
-            scenario_id=request.data.get('scenario_id', 0),
+            scenario_id=data['scenario_id'],
             simulation_type=strategy_type,
             jsonresults=result
         ).save()
-        logger.info("Simulação guardada no histórico — scenario_id: %s", request.data.get('scenario_id'))
+        logger.info("Simulação guardada no histórico — scenario_id: %s", data['scenario_id'])
     except Exception as e:
         logger.warning("Erro ao guardar histórico — %s", str(e))
 

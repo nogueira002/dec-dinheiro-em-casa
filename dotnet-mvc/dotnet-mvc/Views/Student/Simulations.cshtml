@@ -34,7 +34,7 @@
         </div>
 
         <form asp-controller="Student" asp-action="Simulations" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="All" class="text-danger"></div>
 
             <div class="form-group">
                 <label class="form-label" asp-for="ScenarioId">Cenário</label>
@@ -49,7 +49,7 @@
 
             <div class="form-group">
                 <label class="form-label" asp-for="RendimentoMensal">Rendimento mensal (€)</label>
-                <input class="form-control" type="number" step="0.01" min="0" asp-for="RendimentoMensal" />
+                <input class="form-control" type="number" step="0.01" min="0.01" asp-for="RendimentoMensal" />
                 <span class="text-danger" asp-validation-for="RendimentoMensal"></span>
             </div>
 
@@ -192,3 +192,7 @@
     </div>
 
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

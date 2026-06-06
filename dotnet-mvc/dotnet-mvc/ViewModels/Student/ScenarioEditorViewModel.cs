@@ -22,7 +22,7 @@ public class ScenarioEditorViewModel
     public int MembersCount { get; set; } = 2;
 
     [Required(ErrorMessage = "Indica o saldo inicial.")]
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "O saldo inicial deve ser igual ou superior a 0.")]
+    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "O saldo inicial deve ser igual ou superior a 0.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Saldo inicial (€)")]
     public decimal? InitialBalance { get; set; }
 

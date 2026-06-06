@@ -17,23 +17,23 @@ public class SimulationViewModel
     [Display(Name = "Período (meses)")]
     public int Meses { get; set; } = 24;
 
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.")]
+    [Range(typeof(decimal), "0.01", "999999999.99", ErrorMessage = "O rendimento mensal tem de ser maior que zero.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Rendimento mensal (€)")]
     public decimal RendimentoMensal { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.")]
+    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Despesas mensais (€)")]
     public decimal DespesasMensais { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.")]
+    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Encargos fixos (€)")]
     public decimal EncargosFixos { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.")]
+    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Capital para poupança (€)")]
     public decimal CapitalPoupanca { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.")]
+    [Range(typeof(decimal), "0", "999999999.99", ErrorMessage = "Valor inválido.", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Empréstimo (€)")]
     public decimal Emprestimo { get; set; }
 
