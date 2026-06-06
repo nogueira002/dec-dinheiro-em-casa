@@ -216,7 +216,7 @@ public class StudentController : AuthenticatedControllerBase
         }
 
         // Delega o cálculo na API Django (que invoca o motor Python). O portal não calcula.
-        var result = await _financeApiClient.SimulateAsync(new SimulationRequest
+        var outcome = await _financeApiClient.SimulateAsync(new SimulationRequest
         {
             Strategy = model.Strategy,
             ScenarioId = model.ScenarioId ?? 0,
@@ -228,12 +228,15 @@ public class StudentController : AuthenticatedControllerBase
             Meses = model.Meses
         }, cancellationToken);
 
-        if (result is null)
+        if (outcome.Success)
         {
-            model.ErrorMessage = "Não foi possível obter a simulação. Tenta novamente dentro de momentos.";
+            model.Result = outcome.Result;
+        }
+        else
+        {
+            model.ErrorMessage = outcome.ErrorMessage;
         }
 
-        model.Result = result;
         return View(model);
     }
 
