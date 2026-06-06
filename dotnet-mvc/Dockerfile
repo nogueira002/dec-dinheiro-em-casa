@@ -1,5 +1,5 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copiar o .csproj para restaurar dependências em cache separado
@@ -13,7 +13,7 @@ RUN dotnet publish dotnet-mvc/dotnet-mvc.csproj \
     -o /app/publish
 
 # Runtime stage — imagem mínima sem SDK
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 # curl necessário para o health check (aspnet image não inclui wget/curl)
