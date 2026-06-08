@@ -16,6 +16,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("A connection string 'DefaultConnection' não está configurada.");
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
 
+// Disponibilizar a connection string às classes CRUD (padrão DriverDB, igual a Program.DbCon)
+dotnet_mvc.Models.DAL.DriverDB.ConnectionString = connectionString;
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,

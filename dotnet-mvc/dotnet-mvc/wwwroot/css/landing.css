@@ -273,19 +273,15 @@
     align-items: center;
 }
 
-.about__visual {
-    background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-secondary-light) 100%);
-    border-radius: var(--radius-xl);
-    padding: var(--space-8);
-    aspect-ratio: 4 / 3;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--space-4);
-}
+.about__visual{
+   display: flex;
+   flex-direction: column; 
+   justify-content: center; 
+   gap: var(--space-4);
+}      
 
 .about__stat {
-    background: var(--color-white);
+    background: var(--color-primary);
     border-radius: var(--radius-md);
     padding: var(--space-4);
     box-shadow: var(--shadow-sm);
@@ -295,12 +291,12 @@
     font-family: var(--font-headline);
     font-weight: 900;
     font-size: 2rem;
-    color: var(--color-primary);
+    color: var(--color-white);
     line-height: 1;
 }
 
 .about__stat-label {
-    color: var(--color-gray-600);
+    color: var(--color-white);
     font-size: 0.9rem;
     margin-top: var(--space-1);
 }
@@ -357,6 +353,8 @@
     text-align: center;
     position: relative;
     overflow: hidden;
+    margin: 10px 156px 10px 156px;
+    border-radius: 20px;
 }
 
 .cta-banner::before {
