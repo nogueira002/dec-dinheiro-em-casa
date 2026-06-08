@@ -39,6 +39,14 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,django-api,portal}
+      MYSQL_HOST: mysql-financeira
+      MYSQL_DB: dec_financeira
+      MYSQL_USER: ${MYSQL_FINANCEIRA_USER}
+      MYSQL_PASSWORD: ${MYSQL_FINANCEIRA_PASSWORD}
+      MYSQL_PORT: 3306
+    depends_on:
+      mysql-financeira:
+        condition: service_healthy
     networks:
       - internal
     healthcheck:
@@ -65,6 +73,38 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test:
+        - "CMD"
+        - "mysqladmin"
+        - "ping"
+        - "-h"
+        - "localhost"
+        - "-u"
+        - "root"
+        - "--password=${MYSQL_ROOT_PASSWORD}"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # MySQL Financeira — base de dados do Django API (dec_financeira)
+  # ──────────────────────────────────────────────
+  mysql-financeira:
+    image: mysql:8.0
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dec_financeira
+      MYSQL_USER: ${MYSQL_FINANCEIRA_USER}
+      MYSQL_PASSWORD: ${MYSQL_FINANCEIRA_PASSWORD}
+    volumes:
+      - mysql-financeira-data:/var/lib/mysql
     networks:
       - internal
     healthcheck:
@@ -120,3 +160,4 @@ networks:
 # ──────────────────────────────────────────────
 volumes:
   mysql-data:
+  mysql-financeira-data:
