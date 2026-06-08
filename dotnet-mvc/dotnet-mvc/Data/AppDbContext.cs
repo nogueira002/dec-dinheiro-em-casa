@@ -17,6 +17,9 @@ public class AppDbContext : DbContext
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<ChallengeEnrollment> ChallengeEnrollments { get; set; }
     public DbSet<ChallengeSubmission> ChallengeSubmissions { get; set; }
+    public DbSet<FinancialEntry> FinancialEntries { get; set; }
+    public DbSet<SavingsGoal> SavingsGoals { get; set; }
+    public DbSet<SimulationHistory> SimulationHistories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,6 +129,46 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.ChallengeSubmissions)
                 .HasForeignKey(x => x.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<FinancialEntry>(entity =>
+        {
+            entity.Property(x => x.EntryType).HasMaxLength(16);
+            entity.Property(x => x.Category).HasMaxLength(80);
+            entity.Property(x => x.Amount).HasPrecision(12, 2);
+
+            entity.HasOne(x => x.Scenario)
+                .WithMany(x => x.Entries)
+                .HasForeignKey(x => x.ScenarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SavingsGoal>(entity =>
+        {
+            entity.Property(x => x.Description).HasMaxLength(200);
+            entity.Property(x => x.TargetAmount).HasPrecision(12, 2);
+            entity.Property(x => x.SavedAmount).HasPrecision(12, 2);
+
+            entity.HasOne(x => x.Scenario)
+                .WithMany(x => x.Goals)
+                .HasForeignKey(x => x.ScenarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SimulationHistory>(entity =>
+        {
+            entity.Property(x => x.Strategy).HasMaxLength(32);
+            entity.Property(x => x.TaxaEsforcoClassificacao).HasMaxLength(80);
+            entity.Property(x => x.RendimentoMensal).HasPrecision(12, 2);
+            entity.Property(x => x.DespesasMensais).HasPrecision(12, 2);
+            entity.Property(x => x.TaxaEsforco).HasPrecision(6, 3);
+            entity.Property(x => x.MontanteFinal).HasPrecision(14, 2);
+            entity.Property(x => x.PoupancaAcumulada).HasPrecision(14, 2);
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.SimulationHistories)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

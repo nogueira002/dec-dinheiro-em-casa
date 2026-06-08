@@ -1,16 +1,12 @@
+@model dotnet_mvc.ViewModels.Professor.ProfessorDashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
-    ViewData["PageTitle"] = "Dashboard";
-    ViewData["Role"] = "Professor";
-    ViewData["ActiveMenu"] = "dashboard";
-    ViewData["UserName"] = "Prof. Santos";
-    ViewData["UserRoleLabel"] = "Professor";
     Layout = "_DashboardLayout";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-header__title">Bem-vindo, @(User.Identity?.Name ?? "professor") 👋</h1>
+        <h1 class="page-header__title">Bem-vindo, @(User.Identity?.Name ?? "professor")</h1>
         <p class="page-header__subtitle">Aqui está um resumo das tuas turmas e atividades.</p>
     </div>
     <div class="page-header__actions">
@@ -20,112 +16,164 @@
 </div>
 
 @* ===== KPIs ===== *@
-<div class="grid grid--3 mb-8">
+<div class="grid grid--4 mb-8">
     <div class="stat-card">
         <div class="stat-card__icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Total de alunos</div>
-            <div class="stat-card__value">82</div>
-            <div class="stat-card__hint">3 turmas ativas</div>
+            <div class="stat-card__value">@Model.TotalStudents</div>
+            <div class="stat-card__hint">em @Model.TotalClasses turma@(Model.TotalClasses == 1 ? "" : "s")</div>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--info">★</div>
+        <div class="stat-card__icon stat-card__icon--info">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Desafios ativos</div>
-            <div class="stat-card__value">7</div>
-            <div class="stat-card__hint">2 a expirar esta semana</div>
+            <div class="stat-card__value">@Model.ActiveChallengesCount</div>
+            <div class="stat-card__hint">publicados e dentro do prazo</div>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--warning">⏱</div>
+        <div class="stat-card__icon stat-card__icon--warning">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Submissões pendentes</div>
-            <div class="stat-card__value">14</div>
-            <div class="stat-card__hint">Por avaliar</div>
+            <div class="stat-card__value">@Model.PendingSubmissionsCount</div>
+            <div class="stat-card__hint">
+                @if (Model.PendingSubmissionsCount > 0)
+                {
+                    <a asp-controller="Professor" asp-action="Submissions" asp-route-status="pending"
+                       class="text-warning" style="text-decoration:underline;">Ver submissões →</a>
+                }
+                else
+                {
+                    <span>Tudo avaliado!</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Turmas</div>
+            <div class="stat-card__value">@Model.TotalClasses</div>
+            <div class="stat-card__hint">
+                <a asp-controller="Professor" asp-action="Classes" style="text-decoration:underline;">Gerir turmas →</a>
+            </div>
         </div>
     </div>
 </div>
 
-@* ===== Turmas + Atividade ===== *@
+@* ===== Turmas + Atividade recente ===== *@
 <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: var(--space-6);">
 
     <div class="card">
         <div class="card__header">
             <div>
                 <h2 class="card__title">As tuas turmas</h2>
-                <p class="card__subtitle">3 turmas a teu cargo</p>
+                <p class="card__subtitle">@Model.TotalClasses turma@(Model.TotalClasses == 1 ? "" : "s") a teu cargo</p>
             </div>
             <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Classes">Ver todas →</a>
         </div>
 
-        <div class="activity-list">
-            <div class="activity-item">
-                <div class="activity-item__icon">11A</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">11.º A · Economia</div>
-                    <div class="activity-item__meta">28 alunos · Código: <strong>DEC-11A2X</strong></div>
-                </div>
-                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+        @if (Model.Classes.Count == 0)
+        {
+            <div class="empty-state" style="padding: var(--space-6) 0;">
+                <div class="empty-state__icon">👥</div>
+                <div class="empty-state__title">Ainda não tens turmas</div>
+                <a class="btn btn--primary btn--sm" asp-controller="Professor" asp-action="CreateClass">Criar primeira turma</a>
             </div>
-            <div class="activity-item">
-                <div class="activity-item__icon">11B</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">11.º B · Economia</div>
-                    <div class="activity-item__meta">26 alunos · Código: <strong>DEC-11B7P</strong></div>
-                </div>
-                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
+        }
+        else
+        {
+            <div class="activity-list">
+                @foreach (var c in Model.Classes)
+                {
+                    <div class="activity-item">
+                        <div class="activity-item__icon">
+                            @(c.Name.Length > 0 ? c.Name[0].ToString().ToUpper() : "T")
+                        </div>
+                        <div class="activity-item__body">
+                            <div class="activity-item__title">@c.Name</div>
+                            <div class="activity-item__meta">
+                                @c.StudentCount aluno@(c.StudentCount == 1 ? "" : "s") ·
+                                Código: <strong>@c.AccessCode</strong> ·
+                                @c.ActiveChallengesCount desafio@(c.ActiveChallengesCount == 1 ? "" : "s") ativo@(c.ActiveChallengesCount == 1 ? "" : "s")
+                            </div>
+                        </div>
+                        <a class="btn btn--outline btn--sm"
+                           asp-controller="Professor" asp-action="Progress" asp-route-classId="@c.Id">
+                            Ver alunos
+                        </a>
+                    </div>
+                }
             </div>
-            <div class="activity-item">
-                <div class="activity-item__icon">12A</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">12.º A · Economia C</div>
-                    <div class="activity-item__meta">28 alunos · Código: <strong>DEC-12AX9</strong></div>
-                </div>
-                <a class="btn btn--outline btn--sm" asp-controller="Professor" asp-action="Progress">Ver alunos</a>
-            </div>
-        </div>
+        }
     </div>
 
     <div class="card">
         <div class="card__header">
-            <h2 class="card__title">Atividade recente</h2>
+            <h2 class="card__title">Submissões recentes</h2>
         </div>
 
-        <div class="activity-list">
-            <div class="activity-item">
-                <div class="activity-item__icon" style="background: var(--color-success-light); color: var(--color-success);">✓</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">Maria Costa submeteu "Crédito habitação"</div>
-                    <div class="activity-item__meta">há 12 minutos · 11.º A</div>
-                </div>
+        @if (Model.RecentSubmissions.Count == 0)
+        {
+            <div class="empty-state" style="padding: var(--space-6) 0;">
+                <div class="empty-state__icon">📋</div>
+                <div class="empty-state__title">Sem submissões ainda</div>
+                <p class="empty-state__text">As submissões dos alunos aparecem aqui.</p>
             </div>
-            <div class="activity-item">
-                <div class="activity-item__icon">+</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">João Pereira aderiu à turma 11.º B</div>
-                    <div class="activity-item__meta">há 2 horas</div>
-                </div>
+        }
+        else
+        {
+            <div class="activity-list">
+                @foreach (var s in Model.RecentSubmissions)
+                {
+                    <div class="activity-item">
+                        <div class="activity-item__icon"
+                             style="background: @(s.IsGraded ? "var(--color-success-light)" : "var(--color-warning-light)"); color: @(s.IsGraded ? "var(--color-success)" : "var(--color-warning)");">
+                            @(s.IsGraded ? "✓" : "⏱")
+                        </div>
+                        <div class="activity-item__body">
+                            <div class="activity-item__title">
+                                @s.StudentName submeteu "@s.ChallengeTitle"
+                            </div>
+                            <div class="activity-item__meta">
+                                @s.SubmittedAtUtc.ToLocalTime().ToString("dd/MM HH:mm")
+                                @if (!string.IsNullOrEmpty(s.ClassroomName))
+                                {
+                                    <text> · @s.ClassroomName</text>
+                                }
+                                @if (s.IsGraded)
+                                {
+                                    <text> · <span style="color:var(--color-success);">Avaliada</span></text>
+                                }
+                                else
+                                {
+                                    <text> · <span style="color:var(--color-warning);">Por avaliar</span></text>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-            <div class="activity-item">
-                <div class="activity-item__icon" style="background: var(--color-warning-light); color: var(--color-warning);">!</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">Desafio "Poupança 50/30/20" expira em 3 dias</div>
-                    <div class="activity-item__meta">15 alunos ainda não submeteram</div>
-                </div>
+
+            <div style="text-align:center; margin-top: var(--space-4);">
+                <a asp-controller="Professor" asp-action="Submissions" class="btn btn--ghost btn--sm">
+                    Ver todas as submissões →
+                </a>
             </div>
-            <div class="activity-item">
-                <div class="activity-item__icon" style="background: var(--color-success-light); color: var(--color-success);">✓</div>
-                <div class="activity-item__body">
-                    <div class="activity-item__title">Avaliaste 5 submissões esta manhã</div>
-                    <div class="activity-item__meta">há 5 horas</div>
-                </div>
-            </div>
-        </div>
+        }
     </div>
 
 </div>

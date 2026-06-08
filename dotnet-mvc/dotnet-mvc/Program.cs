@@ -1,5 +1,6 @@
 using dotnet_mvc.Security;
 using dotnet_mvc.Services.Academic;
+using dotnet_mvc.Services.Admin;
 using dotnet_mvc.Services.Dashboard;
 using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
@@ -35,8 +36,14 @@ builder.Services.AddScoped<ISessionTokenService, SessionTokenService>();
 builder.Services.AddScoped<CookieSessionValidator>();
 builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
 builder.Services.AddScoped<IAcademicManagementService, AcademicManagementService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 builder.Services.AddScoped<IStudentDashboardService, StudentDashboardService>();
 builder.Services.AddScoped<IScenarioService, ScenarioService>();
+builder.Services.AddScoped<IFinancialEntryService, FinancialEntryService>();
+builder.Services.AddScoped<ISavingsGoalService, SavingsGoalService>();
+builder.Services.AddScoped<ISimulationHistoryService, SimulationHistoryService>();
+builder.Services.AddHttpClient();
 
 // Cliente HTTP tipado para o microserviço de cálculo financeiro (API Django).
 // O portal NÃO calcula localmente — delega na API, conforme a arquitetura do sistema.
@@ -46,6 +53,15 @@ builder.Services.AddHttpClient<IFinanceApiClient, FinanceApiClient>(client =>
 {
     client.BaseAddress = new Uri(financeApiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(15);
+    // Forçar HTTP/1.1 — o Nginx local não anuncia HTTP/2 no ALPN.
+    client.DefaultRequestVersion = System.Net.HttpVersion.Version11;
+    client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Certificado auto-assinado do Nginx local.
+    ServerCertificateCustomValidationCallback =
+        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 });
 
 builder.Services

@@ -26,4 +26,5 @@ public class User
     public ICollection<ChallengeSubmission> ChallengeSubmissions { get; set; } = [];
     public ICollection<Challenge> CreatedChallenges { get; set; } = [];
     public ICollection<Scenario> Scenarios { get; set; } = [];
+    public ICollection<SimulationHistory> SimulationHistories { get; set; } = [];
 }

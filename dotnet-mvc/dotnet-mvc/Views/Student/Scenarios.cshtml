@@ -66,9 +66,11 @@ else
                     </div>
                 </div>
 
-                <div class="card__footer">
+                <div class="card__footer" style="flex-wrap:wrap; gap: var(--space-2);">
                     <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="EditScenario" asp-route-id="@s.Id">Editar</a>
-                    <span class="text-sm text-muted">Criado em @s.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    <a class="btn btn--outline btn--sm" asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@s.Id">Lançamentos</a>
+                    <a class="btn btn--outline btn--sm" asp-controller="Student" asp-action="Objectives" asp-route-scenarioId="@s.Id">Objetivos</a>
+                    <span class="text-sm text-muted" style="margin-left:auto;">Criado em @s.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</span>
                 </div>
             </article>
         }

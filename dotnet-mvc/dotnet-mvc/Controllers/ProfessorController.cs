@@ -22,10 +22,18 @@ public class ProfessorController : AuthenticatedControllerBase
         _accessCodeService = accessCodeService;
     }
 
-    public IActionResult Dashboard()
+    public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
     {
         ApplyDashboardContext("Dashboard", "dashboard", GetManagementRole());
-        return View();
+
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var model = await _academicManagementService.GetProfessorDashboardAsync(professorId.Value, cancellationToken);
+        return View(model);
     }
 
     public async Task<IActionResult> Challenges(CancellationToken cancellationToken)
@@ -118,10 +126,106 @@ public class ProfessorController : AuthenticatedControllerBase
         return RedirectToAction(nameof(Classes));
     }
 
-    public IActionResult Submissions()
+    public async Task<IActionResult> Submissions(int? challengeId, int? classroomId, string? status, CancellationToken cancellationToken)
     {
         ApplyDashboardContext("Submissões", "submissions", GetManagementRole());
-        return View();
+
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var allSubmissions = await _academicManagementService.GetProfessorSubmissionsAsync(
+            professorId.Value, challengeId, classroomId, cancellationToken);
+
+        var filtered = status switch
+        {
+            "pending" => allSubmissions.Where(x => !x.IsGraded).ToList(),
+            "graded"  => allSubmissions.Where(x => x.IsGraded).ToList(),
+            _         => (IReadOnlyList<SubmissionListItemViewModel>)allSubmissions
+        };
+
+        var classes = await _academicManagementService.GetProfessorClassroomOptionsAsync(
+            professorId.Value, onlyActive: false, cancellationToken);
+
+        var challenges = await _academicManagementService.GetProfessorChallengeOptionsAsync(
+            professorId.Value, onlyDraft: false, cancellationToken);
+
+        var model = new SubmissionsIndexViewModel
+        {
+            Submissions = filtered,
+            AvailableClasses = classes,
+            AvailableChallenges = challenges,
+            SelectedChallengeId = challengeId,
+            SelectedClassroomId = classroomId,
+            StatusFilter = status,
+            PendingCount = allSubmissions.Count(x => !x.IsGraded),
+            GradedCount = allSubmissions.Count(x => x.IsGraded)
+        };
+
+        return View(model);
+    }
+
+    public async Task<IActionResult> ReviewSubmission(int id, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Avaliar submissão", "submissions", GetManagementRole());
+
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var model = await _academicManagementService.GetSubmissionForReviewAsync(professorId.Value, id, cancellationToken);
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ReviewSubmission(int id, ReviewSubmissionViewModel model, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Avaliar submissão", "submissions", GetManagementRole());
+
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var existing = await _academicManagementService.GetSubmissionForReviewAsync(professorId.Value, id, cancellationToken);
+            if (existing is null)
+            {
+                return NotFound();
+            }
+
+            model.StudentName = existing.StudentName;
+            model.ChallengeTitle = existing.ChallengeTitle;
+            model.ClassroomName = existing.ClassroomName;
+            model.ResponseText = existing.ResponseText;
+            model.SubmittedAtUtc = existing.SubmittedAtUtc;
+            model.UpdatedAtUtc = existing.UpdatedAtUtc;
+            model.IsAlreadyGraded = existing.IsAlreadyGraded;
+            return View(model);
+        }
+
+        var reviewed = await _academicManagementService.ReviewSubmissionAsync(
+            professorId.Value, id, model.Grade!.Value, model.Feedback, cancellationToken);
+
+        if (!reviewed)
+        {
+            return NotFound();
+        }
+
+        TempData["StatusType"] = "success";
+        TempData["StatusMessage"] = $"Avaliação de {model.StudentName} guardada com sucesso.";
+        return RedirectToAction(nameof(Submissions));
     }
 
     public async Task<IActionResult> Progress(int? classId, CancellationToken cancellationToken)
@@ -343,6 +447,26 @@ public class ProfessorController : AuthenticatedControllerBase
         {
             ModelState.AddModelError(nameof(model.ClassId), "Cria primeiro uma turma antes de atribuíres desafios.");
         }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveStudent(int classroomId, int studentId, CancellationToken cancellationToken)
+    {
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var success = await _academicManagementService.RemoveStudentFromClassroomAsync(
+            professorId.Value, classroomId, studentId, cancellationToken);
+
+        TempData["StatusType"] = success ? "success" : "error";
+        TempData["StatusMessage"] = success
+            ? "Aluno removido da turma com sucesso."
+            : "Não foi possível remover o aluno da turma.";
+
+        return RedirectToAction(nameof(Classes));
     }
 
     private string GetManagementRole()

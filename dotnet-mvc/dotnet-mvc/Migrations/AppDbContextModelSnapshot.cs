@@ -17,7 +17,7 @@ namespace dotnet_mvc.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.13")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -216,6 +216,87 @@ namespace dotnet_mvc.Migrations
                     b.ToTable("ClassroomMemberships");
                 });
 
+            modelBuilder.Entity("dotnet_mvc.Models.FinancialEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ScenarioId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScenarioId");
+
+                    b.ToTable("FinancialEntries");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.SavingsGoal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DeadlineMonths")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<decimal>("SavedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("ScenarioId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TargetAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScenarioId");
+
+                    b.ToTable("SavingsGoals");
+                });
+
             modelBuilder.Entity("dotnet_mvc.Models.Scenario", b =>
                 {
                     b.Property<int>("Id")
@@ -258,6 +339,59 @@ namespace dotnet_mvc.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Scenarios");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.SimulationHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("DespesasMensais")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("Meses")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("MontanteFinal")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<decimal?>("PoupancaAcumulada")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<decimal>("RendimentoMensal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Strategy")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<decimal?>("TaxaEsforco")
+                        .HasPrecision(6, 3)
+                        .HasColumnType("decimal(6,3)");
+
+                    b.Property<string>("TaxaEsforcoClassificacao")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SimulationHistories");
                 });
 
             modelBuilder.Entity("dotnet_mvc.Models.User", b =>
@@ -406,6 +540,28 @@ namespace dotnet_mvc.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("dotnet_mvc.Models.FinancialEntry", b =>
+                {
+                    b.HasOne("dotnet_mvc.Models.Scenario", "Scenario")
+                        .WithMany("Entries")
+                        .HasForeignKey("ScenarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Scenario");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.SavingsGoal", b =>
+                {
+                    b.HasOne("dotnet_mvc.Models.Scenario", "Scenario")
+                        .WithMany("Goals")
+                        .HasForeignKey("ScenarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Scenario");
+                });
+
             modelBuilder.Entity("dotnet_mvc.Models.Scenario", b =>
                 {
                     b.HasOne("dotnet_mvc.Models.User", "Owner")
@@ -415,6 +571,17 @@ namespace dotnet_mvc.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("dotnet_mvc.Models.SimulationHistory", b =>
+                {
+                    b.HasOne("dotnet_mvc.Models.User", "User")
+                        .WithMany("SimulationHistories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("dotnet_mvc.Models.Challenge", b =>
@@ -431,6 +598,13 @@ namespace dotnet_mvc.Migrations
                     b.Navigation("Memberships");
                 });
 
+            modelBuilder.Entity("dotnet_mvc.Models.Scenario", b =>
+                {
+                    b.Navigation("Entries");
+
+                    b.Navigation("Goals");
+                });
+
             modelBuilder.Entity("dotnet_mvc.Models.User", b =>
                 {
                     b.Navigation("ChallengeEnrollments");
@@ -444,6 +618,8 @@ namespace dotnet_mvc.Migrations
                     b.Navigation("ManagedClassrooms");
 
                     b.Navigation("Scenarios");
+
+                    b.Navigation("SimulationHistories");
                 });
 #pragma warning restore 612, 618
         }

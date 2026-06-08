@@ -1,151 +1,160 @@
+@model dotnet_mvc.ViewModels.Professor.SubmissionsIndexViewModel
+
 @{
     ViewData["Title"] = "Submissões";
-    ViewData["PageTitle"] = "Avaliar submissões";
-    ViewData["Role"] = "Professor";
-    ViewData["ActiveMenu"] = "submissions";
-    ViewData["UserName"] = "Prof. Santos";
-    ViewData["UserRoleLabel"] = "Professor";
     Layout = "_DashboardLayout";
-
-    var submissions = new[]
-    {
-        new { Student = "Maria Costa",   Class = "11.º A", Challenge = "Crédito habitação",       Date = "08 maio · 14:32", Status = "pending" },
-        new { Student = "João Pereira",  Class = "11.º B", Challenge = "Poupança 50/30/20",       Date = "08 maio · 11:05", Status = "pending" },
-        new { Student = "Ana Lopes",     Class = "11.º A", Challenge = "Orçamento mensal",        Date = "07 maio · 18:21", Status = "graded" },
-        new { Student = "Tiago Marques", Class = "12.º A", Challenge = "Análise de investimento", Date = "07 maio · 09:48", Status = "pending" },
-        new { Student = "Sofia Ribeiro", Class = "11.º A", Challenge = "Orçamento mensal",        Date = "06 maio · 22:10", Status = "graded" }
-    };
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-header__title">Avaliar submissões</h1>
-        <p class="page-header__subtitle">14 submissões pendentes de avaliação.</p>
+        <p class="page-header__subtitle">
+            @Model.PendingCount submissão@(Model.PendingCount == 1 ? "" : "ões") pendente@(Model.PendingCount == 1 ? "" : "s") de avaliação.
+        </p>
+    </div>
+</div>
+
+<div class="grid grid--3 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">📋</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Total</div>
+            <div class="stat-card__value">@(Model.PendingCount + Model.GradedCount)</div>
+            <div class="stat-card__hint">Submissões recebidas</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning">⏳</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Pendentes</div>
+            <div class="stat-card__value">@Model.PendingCount</div>
+            <div class="stat-card__hint">Por avaliar</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">✓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Avaliadas</div>
+            <div class="stat-card__value">@Model.GradedCount</div>
+            <div class="stat-card__hint">Com nota atribuída</div>
+        </div>
     </div>
 </div>
 
 @* ===== Filtros ===== *@
-<div class="filters-bar">
+<form method="get" asp-controller="Professor" asp-action="Submissions" class="filters-bar">
     <span class="filters-bar__label">Estado:</span>
-    <select class="filters-bar__select">
-        <option>Todas</option>
-        <option>Pendentes</option>
-        <option>Avaliadas</option>
+    <select class="filters-bar__select" name="status" onchange="this.form.submit()">
+        <option value="" selected="@(Model.StatusFilter == null)">Todas</option>
+        <option value="pending" selected="@(Model.StatusFilter == "pending")">Pendentes</option>
+        <option value="graded" selected="@(Model.StatusFilter == "graded")">Avaliadas</option>
     </select>
-    <select class="filters-bar__select">
-        <option>Todas as turmas</option>
-        <option>11.º A</option>
-        <option>11.º B</option>
-        <option>12.º A</option>
-    </select>
-</div>
 
-<div class="table-wrapper">
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Turma</th>
-                    <th>Desafio</th>
-                    <th>Data</th>
-                    <th>Estado</th>
-                    <th style="text-align: right;">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in submissions)
-                {
+    @if (Model.AvailableClasses.Count > 0)
+    {
+        <select class="filters-bar__select" name="classroomId" onchange="this.form.submit()">
+            <option value="">Todas as turmas</option>
+            @foreach (var c in Model.AvailableClasses)
+            {
+                <option value="@c.Id" selected="@(Model.SelectedClassroomId == c.Id)">@c.Name</option>
+            }
+        </select>
+    }
+
+    @if (Model.AvailableChallenges.Count > 0)
+    {
+        <select class="filters-bar__select" name="challengeId" onchange="this.form.submit()">
+            <option value="">Todos os desafios</option>
+            @foreach (var ch in Model.AvailableChallenges)
+            {
+                <option value="@ch.Id" selected="@(Model.SelectedChallengeId == ch.Id)">@ch.Title</option>
+            }
+        </select>
+    }
+
+    @if (Model.SelectedChallengeId.HasValue || Model.SelectedClassroomId.HasValue || Model.StatusFilter != null)
+    {
+        <a class="btn btn--ghost btn--sm" asp-controller="Professor" asp-action="Submissions">Limpar filtros</a>
+    }
+</form>
+
+@if (Model.Submissions.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">📭</div>
+        <div class="empty-state__title">Sem submissões</div>
+        <p class="empty-state__text">
+            @if (Model.SelectedChallengeId.HasValue || Model.SelectedClassroomId.HasValue || Model.StatusFilter != null)
+            {
+                <span>Nenhuma submissão encontrada para os filtros selecionados.</span>
+            }
+            else
+            {
+                <span>Os alunos ainda não submeteram respostas aos desafios.</span>
+            }
+        </p>
+    </div>
+}
+else
+{
+    <div class="table-wrapper">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: var(--space-3);">
-                                <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
-                                    @s.Student[0]
-                                </div>
-                                <strong>@s.Student</strong>
-                            </div>
-                        </td>
-                        <td>@s.Class</td>
-                        <td>@s.Challenge</td>
-                        <td><span class="text-muted">@s.Date</span></td>
-                        <td>
-                            @if (s.Status == "pending")
-                            {
-                                <span class="badge badge--warning">Pendente</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge--success">Avaliada</span>
-                            }
-                        </td>
-                        <td style="text-align: right;">
-                            @if (s.Status == "pending")
-                            {
-                                <button class="btn btn--primary btn--sm" data-toggle-modal="#evalModal">Avaliar</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn--outline btn--sm">Ver</button>
-                            }
-                        </td>
+                        <th>Aluno</th>
+                        <th>Turma</th>
+                        <th>Desafio</th>
+                        <th>Data</th>
+                        <th>Estado</th>
+                        <th style="text-align: right;">Ações</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Submissions)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                        @s.StudentName[0]
+                                    </div>
+                                    <strong>@s.StudentName</strong>
+                                </div>
+                            </td>
+                            <td>@s.ClassroomName</td>
+                            <td>@s.ChallengeTitle</td>
+                            <td>
+                                <span class="text-muted">
+                                    @s.SubmittedAtUtc.ToLocalTime().ToString("dd MMM · HH:mm")
+                                    @if (s.UpdatedAtUtc.HasValue)
+                                    {
+                                        <span title="Atualizado a @s.UpdatedAtUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")"> ✎</span>
+                                    }
+                                </span>
+                            </td>
+                            <td>
+                                @if (s.IsGraded)
+                                {
+                                    <span class="badge badge--success">@s.GradeDisplay</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge--warning">Pendente</span>
+                                }
+                            </td>
+                            <td style="text-align: right;">
+                                <a class="btn @(s.IsGraded ? "btn--outline" : "btn--primary") btn--sm"
+                                   asp-controller="Professor"
+                                   asp-action="ReviewSubmission"
+                                   asp-route-id="@s.Id">
+                                    @(s.IsGraded ? "Ver / Corrigir" : "Avaliar")
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
-
-@* ===== Painel de avaliação (inline) ===== *@
-<div class="card mt-8" id="evalModal">
-    <div class="card__header">
-        <div>
-            <h2 class="card__title">Avaliar: "Crédito habitação"</h2>
-            <p class="card__subtitle">Maria Costa · 11.º A · submetido a 08 maio 14:32</p>
-        </div>
-        <span class="badge badge--warning">Pendente</span>
-    </div>
-
-    <div class="alert alert--info mb-4">
-        <span>📝</span>
-        <div>
-            <strong>Resposta do aluno:</strong>
-            <p style="margin-top: var(--space-2); margin-bottom: 0;">
-                Comparei três cenários de crédito habitação a 30 anos com TAEG
-                de 3,5%, 4,2% e 5,1%. O cenário mais vantajoso é o primeiro,
-                com uma poupança total de 28.450 € em juros face ao mais caro…
-            </p>
-        </div>
-    </div>
-
-    <form>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label form-label--required" for="Grade">Nota (0-20)</label>
-                <input class="form-control"
-                       type="number"
-                       id="Grade"
-                       name="Grade"
-                       min="0"
-                       max="20"
-                       step="0.5"
-                       placeholder="Ex.: 17.5"
-                       required />
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label form-label--required" for="Feedback">Feedback</label>
-            <textarea class="form-textarea"
-                      id="Feedback"
-                      name="Feedback"
-                      rows="5"
-                      placeholder="Comentários, sugestões de melhoria, pontos fortes..."
-                      required></textarea>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn--primary">Submeter avaliação</button>
-            <button type="button" class="btn btn--ghost">Guardar rascunho</button>
-        </div>
-    </form>
-</div>
+}

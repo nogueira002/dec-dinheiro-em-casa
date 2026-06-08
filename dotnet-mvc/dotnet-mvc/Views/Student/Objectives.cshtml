@@ -1,130 +1,162 @@
+@using System.Globalization
+@model dotnet_mvc.ViewModels.Student.ObjectivesIndexViewModel
 @{
     ViewData["Title"] = "Objetivos";
-    ViewData["PageTitle"] = "Objetivos de poupança";
-    ViewData["Role"] = "Student";
-    ViewData["ActiveMenu"] = "objectives";
-    ViewData["UserName"] = "Maria Costa";
-    ViewData["UserRoleLabel"] = "Aluna · 11.º A";
     Layout = "_DashboardLayout";
-
-    var objectives = new[]
-    {
-        new { Title = "Universidade", Description = "Reservar para o primeiro ano de propinas", Target = 3000m, Saved = 1350m, Deadline = "Set/2027" },
-        new { Title = "Computador novo", Description = "Substituir o portátil atual", Target = 800m, Saved = 760m, Deadline = "Jul/2026" },
-        new { Title = "Viagem com amigos", Description = "Interrail no verão de 2027", Target = 1500m, Saved = 240m, Deadline = "Jun/2027" }
-    };
+    var pt = CultureInfo.GetCultureInfo("pt-PT");
+    string Money(decimal v) => string.Format(pt, "{0:N2} €", v);
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-header__title">Objetivos de poupança</h1>
-        <p class="page-header__subtitle">Define metas claras e acompanha o teu progresso.</p>
-    </div>
-    <div class="page-header__actions">
-        <button class="btn btn--primary" data-toggle-form="#objectiveForm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Criar objetivo
-        </button>
+        @if (Model.SelectedScenarioId.HasValue)
+        {
+            var sc = Model.AvailableScenarios.FirstOrDefault(s => s.Id == Model.SelectedScenarioId);
+            <p class="page-header__subtitle">Cenário: <strong>@(sc?.Name ?? "—")</strong></p>
+        }
+        else
+        {
+            <p class="page-header__subtitle">Define metas e acompanha o teu progresso.</p>
+        }
     </div>
 </div>
 
-@* ===== Formulário criar objetivo ===== *@
-<div class="card mb-8" id="objectiveForm">
-    <div class="card__header">
-        <div>
-            <h2 class="card__title">Novo objetivo</h2>
-            <p class="card__subtitle">Define a meta e o prazo para a alcançar.</p>
-        </div>
-    </div>
-
-    <form>
-        <div class="form-group">
-            <label class="form-label form-label--required" for="Description">Descrição</label>
-            <input class="form-control"
-                   type="text"
-                   id="Description"
-                   name="Description"
-                   placeholder="Ex.: Comprar um portátil novo"
-                   required />
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label form-label--required" for="Target">Valor alvo (€)</label>
-                <input class="form-control" type="number" id="Target" name="Target" min="1" step="0.01" placeholder="0,00" required />
-            </div>
-
-            <div class="form-group">
-                <label class="form-label form-label--required" for="Months">Prazo (meses)</label>
-                <input class="form-control" type="number" id="Months" name="Months" min="1" max="120" placeholder="Ex.: 12" required />
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn--primary">Criar objetivo</button>
-        </div>
-    </form>
-</div>
-
-@* ===== Lista de objetivos ===== *@
-@if (objectives.Length == 0)
+@* Seletor de cenário *@
+@if (!Model.SelectedScenarioId.HasValue)
 {
-    <div class="empty-state">
-        <div class="empty-state__icon">🎯</div>
-        <div class="empty-state__title">Ainda não tens objetivos definidos</div>
-        <p class="empty-state__text">
-            Cria o teu primeiro objetivo de poupança e começa a construir o futuro.
-        </p>
+    <div class="card mb-6">
+        <div class="card__header">
+            <h2 class="card__title">Escolhe um cenário</h2>
+        </div>
+        @if (Model.AvailableScenarios.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state__icon">🎯</div>
+                <div class="empty-state__title">Ainda não tens cenários</div>
+                <p class="empty-state__text">Cria primeiro um cenário familiar na secção Cenários.</p>
+                <a asp-controller="Student" asp-action="Scenarios" class="btn btn--primary">Ir para Cenários</a>
+            </div>
+        }
+        else
+        {
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+                @foreach (var s in Model.AvailableScenarios)
+                {
+                    <a asp-controller="Student" asp-action="Objectives" asp-route-scenarioId="@s.Id"
+                       class="btn btn--outline">@s.Name</a>
+                }
+            </div>
+        }
     </div>
 }
 else
 {
-    <div class="grid grid--auto-md">
-        @foreach (var o in objectives)
-        {
-            var pct = (int)Math.Round((double)(o.Saved / o.Target * 100));
-            var pctClass = pct >= 100 ? "progress__bar--success" : (pct < 30 ? "progress__bar--warning" : "");
-            <article class="objective-card">
-                <div class="objective-card__header">
-                    <div>
-                        <h3 class="objective-card__title">@o.Title</h3>
-                        <p class="text-sm text-muted">@o.Description</p>
-                    </div>
-                    @if (pct >= 100)
-                    {
-                        <span class="badge badge--success">Concluído</span>
-                    }
-                    else
-                    {
-                        <span class="badge badge--info">Em progresso</span>
-                    }
+    @* Formulário de novo objetivo *@
+    <div class="card mb-6">
+        <div class="card__header">
+            <h2 class="card__title">Novo objetivo</h2>
+            <p class="card__subtitle">Define a meta e o prazo para a alcançar.</p>
+        </div>
+        <form asp-controller="Student" asp-action="CreateObjective" asp-route-scenarioId="@Model.SelectedScenarioId" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
+            <div class="form-group">
+                <label class="form-label form-label--required" asp-for="Form.Description">Descrição</label>
+                <input class="form-control" asp-for="Form.Description" placeholder="Ex.: Comprar um portátil novo" />
+                <span class="text-danger" asp-validation-for="Form.Description"></span>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label form-label--required" asp-for="Form.TargetAmount">Valor alvo (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="1" asp-for="Form.TargetAmount" placeholder="0,00" />
+                    <span class="text-danger" asp-validation-for="Form.TargetAmount"></span>
                 </div>
-
-                <div>
-                    <div class="progress-label">
-                        <strong>@o.Saved.ToString("N0") € / @o.Target.ToString("N0") €</strong>
-                        <span class="text-muted">@pct%</span>
-                    </div>
-                    <div class="progress progress--lg">
-                        <div class="progress__bar @pctClass" style="width: @pct%;"></div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required" asp-for="Form.DeadlineMonths">Prazo (meses)</label>
+                    <input class="form-control" type="number" min="1" max="360" asp-for="Form.DeadlineMonths" placeholder="Ex.: 12" />
+                    <span class="text-danger" asp-validation-for="Form.DeadlineMonths"></span>
                 </div>
-
-                <div class="objective-card__meta">
-                    <div class="scenario-card__row">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        Prazo: <strong>@o.Deadline</strong>
-                    </div>
-                </div>
-
-                <div class="card__footer">
-                    <button class="btn btn--outline btn--sm">Reforçar</button>
-                    <button class="btn btn--ghost btn--sm text-danger"
-                            data-confirm="Apagar o objetivo '@o.Title'?">
-                        Apagar
-                    </button>
-                </div>
-            </article>
-        }
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary">Criar objetivo</button>
+            </div>
+        </form>
     </div>
+
+    @* Lista de objetivos *@
+    @if (Model.Goals.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state__icon">🎯</div>
+            <div class="empty-state__title">Ainda não tens objetivos neste cenário</div>
+            <p class="empty-state__text">Cria o teu primeiro objetivo de poupança acima.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid--auto-md">
+            @foreach (var g in Model.Goals)
+            {
+                var pct = (int)Math.Min(g.ProgressPercent, 100);
+                var barClass = g.IsComplete ? "progress__bar--success" : (pct < 30 ? "progress__bar--warning" : "");
+                <article class="objective-card">
+                    <div class="objective-card__header">
+                        <div>
+                            <h3 class="objective-card__title">@g.Description</h3>
+                            <p class="text-sm text-muted">Prazo: @g.Deadline.ToString("MMM/yyyy", pt)</p>
+                        </div>
+                        @if (g.IsComplete)
+                        {
+                            <span class="badge badge--success">Concluído</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge--info">Em progresso</span>
+                        }
+                    </div>
+
+                    <div>
+                        <div class="progress-label">
+                            <strong>@Money(g.SavedAmount) / @Money(g.TargetAmount)</strong>
+                            <span class="text-muted">@pct%</span>
+                        </div>
+                        <div class="progress progress--lg">
+                            <div class="progress__bar @barClass" style="width: @pct%;"></div>
+                        </div>
+                    </div>
+
+                    @if (!g.IsComplete)
+                    {
+                        <details class="mt-4">
+                            <summary class="btn btn--outline btn--sm" style="cursor:pointer;">Reforçar poupança</summary>
+                            <form asp-controller="Student" asp-action="AddSavings"
+                                  asp-route-scenarioId="@Model.SelectedScenarioId"
+                                  asp-route-goalId="@g.Id" method="post"
+                                  style="display:flex; gap:var(--space-2); margin-top:var(--space-3); align-items:flex-end;">
+                                <div class="form-group" style="margin:0; flex:1;">
+                                    <label class="form-label">Valor a adicionar (€)</label>
+                                    <input class="form-control" type="number" name="amount" step="0.01" min="0.01"
+                                           max="@(g.TargetAmount - g.SavedAmount)" placeholder="0,00" required />
+                                </div>
+                                <button type="submit" class="btn btn--primary btn--sm">Guardar</button>
+                            </form>
+                        </details>
+                    }
+
+                    <div class="card__footer" style="margin-top: var(--space-4);">
+                        <form asp-controller="Student" asp-action="DeleteObjective"
+                              asp-route-scenarioId="@Model.SelectedScenarioId"
+                              asp-route-goalId="@g.Id" method="post"
+                              onsubmit="return confirm('Apagar o objetivo \'@g.Description\'?');">
+                            <button type="submit" class="btn btn--ghost btn--sm text-danger">Apagar</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }

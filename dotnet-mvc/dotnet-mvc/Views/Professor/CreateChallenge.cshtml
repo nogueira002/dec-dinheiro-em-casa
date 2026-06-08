@@ -84,6 +84,38 @@
     </form>
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
+    <style>
+        .EasyMDEContainer .CodeMirror { min-height: 220px; font-size: 0.95rem; font-family: inherit; }
+        .editor-toolbar { border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md); }
+        .EasyMDEContainer .CodeMirror { border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+    </style>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <script>
+        var easyMDE = new EasyMDE({
+            element: document.getElementById('Description'),
+            spellChecker: false,
+            autosave: { enabled: false },
+            placeholder: 'Descreve o objetivo, contexto, dados a utilizar e formato de entrega esperado.\n\nPodes usar **negrito**, *itálico*, listas e títulos.',
+            toolbar: [
+                'bold', 'italic', 'heading-2', '|',
+                'unordered-list', 'ordered-list', '|',
+                'link', 'horizontal-rule', '|',
+                'preview', 'guide'
+            ],
+            minHeight: '220px',
+            status: ['lines', 'words'],
+            renderingConfig: { singleLineBreaks: false }
+        });
+
+        // Garante que o valor do editor é submetido no form
+        document.querySelector('form').addEventListener('submit', function () {
+            document.getElementById('Description').value = easyMDE.value();
+        });
+    </script>
 }

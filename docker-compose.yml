@@ -38,7 +38,7 @@ services:
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,django-api,portal}
       MYSQL_HOST: mysql-financeira
       MYSQL_DB: dec_financeira
       MYSQL_USER: ${MYSQL_FINANCEIRA_USER}
@@ -64,8 +64,8 @@ services:
     image: mysql:8.0
     # Porta não exposta ao host (conforme docs: a BD nunca deve ficar exposta).
     # Para acesso local com cliente gráfico, descomenta temporariamente.
-    # ports:
-    #   - "3307:3306"
+    ports:
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DB}

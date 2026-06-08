@@ -36,6 +36,19 @@
     </select>
 </div>
 
+@functions {
+    string MarkdownExcerpt(string text, int max = 200)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var plain = System.Text.RegularExpressions.Regex.Replace(text, @"#{1,6}\s*", "");
+        plain = System.Text.RegularExpressions.Regex.Replace(plain, @"\*{1,2}([^*]+)\*{1,2}", "$1");
+        plain = System.Text.RegularExpressions.Regex.Replace(plain, @"^\s*[-*+]\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        plain = System.Text.RegularExpressions.Regex.Replace(plain, @"^\s*\d+\.\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        plain = System.Text.RegularExpressions.Regex.Replace(plain, @"\n+", " ").Trim();
+        return plain.Length <= max ? plain : plain[..max] + "…";
+    }
+}
+
 @if (Model.Challenges.Count == 0)
 {
     <div class="empty-state">
@@ -61,7 +74,7 @@ else
                     @Html.Raw(StatusBadge(c.StatusKey, c.StatusLabel))
                 </div>
 
-                <p class="text-sm" style="color: var(--color-gray-700);">@c.Description</p>
+                <p class="text-sm" style="color: var(--color-gray-700);">@MarkdownExcerpt(c.Description)</p>
 
                 <div class="challenge-card__meta">
                     <div class="scenario-card__row">

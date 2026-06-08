@@ -37,13 +37,10 @@ public class SimulationViewModel
     [Display(Name = "Empréstimo (€)")]
     public decimal Emprestimo { get; set; }
 
-    // Preenchido pelo controller para o dropdown de cenários do aluno.
     public IReadOnlyList<ScenarioListItemViewModel> Scenarios { get; set; } = [];
+    public IReadOnlyList<SimulationHistoryItemViewModel> History { get; set; } = [];
 
-    // Resultado devolvido pela API Django (null antes de simular ou em caso de erro).
     public SimulationResult? Result { get; set; }
-
-    // Mensagem mostrada se a API estiver indisponível.
     public string? ErrorMessage { get; set; }
 
     public bool HasResult => Result is not null;

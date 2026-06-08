@@ -65,9 +65,8 @@
             }
         </div>
 
-        <div style="white-space: pre-line; color: var(--color-gray-700); line-height: 1.7;">
-            @Model.Description
-        </div>
+        <div id="challenge-description" class="challenge-description-body" style="color: var(--color-gray-700); line-height: 1.7; display:none;">@Model.Description</div>
+        <div id="challenge-description-rendered" style="color: var(--color-gray-700); line-height: 1.7;"></div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Feedback))
@@ -128,6 +127,35 @@
     </form>
 </div>
 
+@section Styles {
+    <style>
+        #challenge-description-rendered h1, #challenge-description-rendered h2, #challenge-description-rendered h3 {
+            margin: 1rem 0 0.5rem; font-weight: 600;
+        }
+        #challenge-description-rendered h2 { font-size: 1.1rem; }
+        #challenge-description-rendered h3 { font-size: 1rem; }
+        #challenge-description-rendered ul, #challenge-description-rendered ol {
+            padding-left: 1.4rem; margin: 0.5rem 0;
+        }
+        #challenge-description-rendered li { margin-bottom: 0.2rem; }
+        #challenge-description-rendered strong { color: var(--color-gray-900); }
+        #challenge-description-rendered hr { border: none; border-top: 1px solid var(--color-border); margin: 1rem 0; }
+        #challenge-description-rendered p { margin: 0.5rem 0; }
+    </style>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        (function () {
+            var src = document.getElementById('challenge-description');
+            var target = document.getElementById('challenge-description-rendered');
+            if (src && target && typeof marked !== 'undefined') {
+                target.innerHTML = marked.parse(src.textContent || '');
+            } else if (src && target) {
+                target.textContent = src.textContent;
+            }
+        })();
+    </script>
 }

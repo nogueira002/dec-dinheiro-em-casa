@@ -35,6 +35,11 @@ public interface IAcademicManagementService
     Task<IReadOnlyList<StudentChallengeListItemViewModel>> GetStudentChallengesAsync(int studentId, CancellationToken cancellationToken = default);
     Task<StudentChallengeDetailsViewModel?> GetStudentChallengeDetailsAsync(int studentId, int challengeId, CancellationToken cancellationToken = default);
     Task<bool> SaveStudentChallengeSubmissionAsync(int studentId, int challengeId, string responseText, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SubmissionListItemViewModel>> GetProfessorSubmissionsAsync(int professorId, int? challengeId = null, int? classroomId = null, CancellationToken cancellationToken = default);
+    Task<ReviewSubmissionViewModel?> GetSubmissionForReviewAsync(int professorId, int submissionId, CancellationToken cancellationToken = default);
+    Task<bool> ReviewSubmissionAsync(int professorId, int submissionId, decimal grade, string? feedback, CancellationToken cancellationToken = default);
+    Task<bool> RemoveStudentFromClassroomAsync(int professorId, int classroomId, int studentId, CancellationToken cancellationToken = default);
+    Task<ProfessorDashboardViewModel> GetProfessorDashboardAsync(int professorId, CancellationToken cancellationToken = default);
 }
 
 public sealed class AcademicManagementService : IAcademicManagementService
@@ -691,6 +696,147 @@ public sealed class AcademicManagementService : IAcademicManagementService
         return true;
     }
 
+    public async Task<IReadOnlyList<SubmissionListItemViewModel>> GetProfessorSubmissionsAsync(
+        int professorId,
+        int? challengeId = null,
+        int? classroomId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ChallengeSubmissions
+            .AsNoTracking()
+            .Where(x => x.Challenge.CreatedByUserId == professorId && x.Challenge.PublishedAtUtc != null);
+
+        if (challengeId.HasValue)
+        {
+            query = query.Where(x => x.ChallengeId == challengeId.Value);
+        }
+
+        if (classroomId.HasValue)
+        {
+            query = query.Where(x => x.Challenge.ClassroomId == classroomId.Value);
+        }
+
+        var rows = await query
+            .OrderByDescending(x => x.SubmittedAtUtc)
+            .Select(x => new
+            {
+                x.Id,
+                x.ChallengeId,
+                ChallengeTitle = x.Challenge.Title,
+                ClassroomName = x.Challenge.Classroom != null ? x.Challenge.Classroom.Name : string.Empty,
+                x.StudentId,
+                StudentName = x.Student.Name,
+                x.SubmittedAtUtc,
+                x.UpdatedAtUtc,
+                x.Grade
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(x => new SubmissionListItemViewModel
+            {
+                Id = x.Id,
+                ChallengeId = x.ChallengeId,
+                ChallengeTitle = x.ChallengeTitle,
+                ClassroomName = x.ClassroomName,
+                StudentId = x.StudentId,
+                StudentName = x.StudentName,
+                SubmittedAtUtc = x.SubmittedAtUtc,
+                UpdatedAtUtc = x.UpdatedAtUtc != x.SubmittedAtUtc ? x.UpdatedAtUtc : null,
+                IsGraded = x.Grade.HasValue,
+                GradeDisplay = x.Grade.HasValue ? FormatGrade(x.Grade.Value) : null
+            })
+            .ToList();
+    }
+
+    public async Task<ReviewSubmissionViewModel?> GetSubmissionForReviewAsync(
+        int professorId,
+        int submissionId,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await _dbContext.ChallengeSubmissions
+            .AsNoTracking()
+            .Where(x => x.Id == submissionId && x.Challenge.CreatedByUserId == professorId)
+            .Select(x => new
+            {
+                x.Id,
+                StudentName = x.Student.Name,
+                ChallengeTitle = x.Challenge.Title,
+                ClassroomName = x.Challenge.Classroom != null ? x.Challenge.Classroom.Name : string.Empty,
+                x.ResponseText,
+                x.SubmittedAtUtc,
+                x.UpdatedAtUtc,
+                x.Grade,
+                x.Feedback
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (row is null)
+        {
+            return null;
+        }
+
+        return new ReviewSubmissionViewModel
+        {
+            SubmissionId = row.Id,
+            StudentName = row.StudentName,
+            ChallengeTitle = row.ChallengeTitle,
+            ClassroomName = row.ClassroomName,
+            ResponseText = row.ResponseText,
+            SubmittedAtUtc = row.SubmittedAtUtc,
+            UpdatedAtUtc = row.UpdatedAtUtc != row.SubmittedAtUtc ? row.UpdatedAtUtc : null,
+            IsAlreadyGraded = row.Grade.HasValue,
+            Grade = row.Grade,
+            Feedback = row.Feedback
+        };
+    }
+
+    public async Task<bool> ReviewSubmissionAsync(
+        int professorId,
+        int submissionId,
+        decimal grade,
+        string? feedback,
+        CancellationToken cancellationToken = default)
+    {
+        var submission = await _dbContext.ChallengeSubmissions
+            .SingleOrDefaultAsync(x => x.Id == submissionId && x.Challenge.CreatedByUserId == professorId, cancellationToken);
+
+        if (submission is null)
+        {
+            return false;
+        }
+
+        submission.Grade = Math.Clamp(Math.Round(grade * 2, MidpointRounding.AwayFromZero) / 2, 0, 20);
+        submission.Feedback = string.IsNullOrWhiteSpace(feedback) ? null : feedback.Trim();
+        submission.ReviewedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> RemoveStudentFromClassroomAsync(int professorId, int classroomId, int studentId, CancellationToken cancellationToken = default)
+    {
+        var classroom = await _dbContext.Classrooms
+            .SingleOrDefaultAsync(c => c.Id == classroomId && c.OwnerId == professorId, cancellationToken);
+
+        if (classroom is null)
+        {
+            return false;
+        }
+
+        var membership = await _dbContext.ClassroomMemberships
+            .SingleOrDefaultAsync(m => m.ClassroomId == classroomId && m.StudentId == studentId, cancellationToken);
+
+        if (membership is null)
+        {
+            return false;
+        }
+
+        _dbContext.ClassroomMemberships.Remove(membership);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private async Task<JoinByAccessCodeResult> JoinClassroomAsync(int studentId, Classroom classroom, CancellationToken cancellationToken)
     {
         var alreadyMember = await _dbContext.ClassroomMemberships
@@ -1140,5 +1286,89 @@ public sealed class AcademicManagementService : IAcademicManagementService
         public int DirectActiveChallengeCount { get; init; }
         public IReadOnlyList<int> DirectChallengeIds { get; init; } = [];
         public IReadOnlyList<string> DirectChallengeTitles { get; init; } = [];
+    }
+
+    public async Task<ProfessorDashboardViewModel> GetProfessorDashboardAsync(
+        int professorId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        var classrooms = await _dbContext.Classrooms
+            .AsNoTracking()
+            .Where(c => c.OwnerId == professorId)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.AccessCode,
+                StudentCount = c.Memberships.Count,
+                ActiveChallengesCount = c.Challenges
+                    .Count(ch => ch.PublishedAtUtc != null
+                              && (ch.Deadline == null || ch.Deadline > now))
+            })
+            .ToListAsync(cancellationToken);
+
+        var totalStudents = await _dbContext.ClassroomMemberships
+            .AsNoTracking()
+            .Where(m => m.Classroom.OwnerId == professorId)
+            .Select(m => m.StudentId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        var activeChallengesCount = await _dbContext.Challenges
+            .AsNoTracking()
+            .Where(ch => ch.CreatedByUserId == professorId
+                      && ch.PublishedAtUtc != null
+                      && (ch.Deadline == null || ch.Deadline > now))
+            .CountAsync(cancellationToken);
+
+        var pendingSubmissionsCount = await _dbContext.ChallengeSubmissions
+            .AsNoTracking()
+            .Where(s => s.Challenge.CreatedByUserId == professorId && s.Grade == null)
+            .CountAsync(cancellationToken);
+
+        var recentRaw = await _dbContext.ChallengeSubmissions
+            .AsNoTracking()
+            .Where(s => s.Challenge.CreatedByUserId == professorId)
+            .OrderByDescending(s => s.SubmittedAtUtc)
+            .Take(5)
+            .Select(s => new
+            {
+                s.SubmittedAtUtc,
+                s.Grade,
+                StudentName = s.Student.Name,
+                ChallengeTitle = s.Challenge.Title,
+                ClassroomName = s.Challenge.Classroom != null ? s.Challenge.Classroom.Name : (string?)null
+            })
+            .ToListAsync(cancellationToken);
+
+        return new ProfessorDashboardViewModel
+        {
+            TotalClasses = classrooms.Count,
+            TotalStudents = totalStudents,
+            ActiveChallengesCount = activeChallengesCount,
+            PendingSubmissionsCount = pendingSubmissionsCount,
+            Classes = classrooms
+                .Take(5)
+                .Select(c => new DashboardClassViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    AccessCode = c.AccessCode,
+                    StudentCount = c.StudentCount,
+                    ActiveChallengesCount = c.ActiveChallengesCount
+                })
+                .ToList(),
+            RecentSubmissions = recentRaw
+                .Select(s => new DashboardSubmissionViewModel
+                {
+                    StudentName = s.StudentName,
+                    ChallengeTitle = s.ChallengeTitle,
+                    ClassroomName = s.ClassroomName,
+                    SubmittedAtUtc = s.SubmittedAtUtc,
+                    IsGraded = s.Grade.HasValue
+                })
+                .ToList()
+        };
     }
 }

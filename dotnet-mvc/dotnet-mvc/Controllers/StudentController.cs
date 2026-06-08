@@ -17,17 +17,26 @@ public class StudentController : AuthenticatedControllerBase
     private readonly IStudentDashboardService _studentDashboardService;
     private readonly IScenarioService _scenarioService;
     private readonly IFinanceApiClient _financeApiClient;
+    private readonly IFinancialEntryService _entryService;
+    private readonly ISavingsGoalService _goalService;
+    private readonly ISimulationHistoryService _simulationHistoryService;
 
     public StudentController(
         IAcademicManagementService academicManagementService,
         IStudentDashboardService studentDashboardService,
         IScenarioService scenarioService,
-        IFinanceApiClient financeApiClient)
+        IFinanceApiClient financeApiClient,
+        IFinancialEntryService entryService,
+        ISavingsGoalService goalService,
+        ISimulationHistoryService simulationHistoryService)
     {
         _academicManagementService = academicManagementService;
         _studentDashboardService = studentDashboardService;
         _scenarioService = scenarioService;
         _financeApiClient = financeApiClient;
+        _entryService = entryService;
+        _goalService = goalService;
+        _simulationHistoryService = simulationHistoryService;
     }
 
     public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
@@ -173,11 +182,136 @@ public class StudentController : AuthenticatedControllerBase
         return RedirectToAction(nameof(Scenarios));
     }
 
-    public IActionResult Entries()
+    // ===== Lançamentos =====
+
+    public async Task<IActionResult> Entries(int? scenarioId, string? type, CancellationToken cancellationToken)
     {
         ApplyDashboardContext("Lançamentos", "entries", UserRoles.Student);
-        return View();
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var model = await BuildEntriesViewModelAsync(userId.Value, scenarioId, type, cancellationToken);
+        return View(model);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> AddEntry(int scenarioId, CreateEntryViewModel Form, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Lançamentos", "entries", UserRoles.Student);
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var vm = await BuildEntriesViewModelAsync(userId.Value, scenarioId, null, cancellationToken);
+            vm.Form = Form;
+            return View("Entries", vm);
+        }
+
+        await _entryService.AddEntryAsync(userId.Value, scenarioId, Form, cancellationToken);
+        TempData["StatusType"] = "success";
+        TempData["StatusMessage"] = "Lançamento adicionado com sucesso.";
+        return RedirectToAction(nameof(Entries), new { scenarioId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteEntry(int scenarioId, int entryId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        await _entryService.DeleteEntryAsync(userId.Value, entryId, cancellationToken);
+        TempData["StatusType"] = "success";
+        TempData["StatusMessage"] = "Lançamento eliminado.";
+        return RedirectToAction(nameof(Entries), new { scenarioId });
+    }
+
+    // ===== Objetivos =====
+
+    public async Task<IActionResult> Objectives(int? scenarioId, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Objetivos", "objectives", UserRoles.Student);
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var model = await BuildObjectivesViewModelAsync(userId.Value, scenarioId, cancellationToken);
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateObjective(int scenarioId, CreateObjectiveViewModel Form, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Objetivos", "objectives", UserRoles.Student);
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var vm = await BuildObjectivesViewModelAsync(userId.Value, scenarioId, cancellationToken);
+            vm.Form = Form;
+            return View("Objectives", vm);
+        }
+
+        await _goalService.CreateGoalAsync(userId.Value, scenarioId, Form, cancellationToken);
+        TempData["StatusType"] = "success";
+        TempData["StatusMessage"] = "Objetivo criado com sucesso.";
+        return RedirectToAction(nameof(Objectives), new { scenarioId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddSavings(int scenarioId, int goalId, decimal amount, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (amount > 0)
+        {
+            await _goalService.AddSavingsAsync(userId.Value, goalId, amount, cancellationToken);
+            TempData["StatusType"] = "success";
+            TempData["StatusMessage"] = "Poupança registada com sucesso.";
+        }
+
+        return RedirectToAction(nameof(Objectives), new { scenarioId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteObjective(int scenarioId, int goalId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (!userId.HasValue)
+        {
+            return Forbid();
+        }
+
+        await _goalService.DeleteGoalAsync(userId.Value, goalId, cancellationToken);
+        TempData["StatusType"] = "success";
+        TempData["StatusMessage"] = "Objetivo eliminado.";
+        return RedirectToAction(nameof(Objectives), new { scenarioId });
+    }
+
+    // ===== Simulações =====
 
     public async Task<IActionResult> Simulations(CancellationToken cancellationToken)
     {
@@ -191,7 +325,8 @@ public class StudentController : AuthenticatedControllerBase
 
         var model = new SimulationViewModel
         {
-            Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken)
+            Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken),
+            History = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken)
         };
         return View(model);
     }
@@ -207,15 +342,14 @@ public class StudentController : AuthenticatedControllerBase
             return Forbid();
         }
 
-        // Recarrega o dropdown de cenários para reapresentar o formulário.
         model.Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken);
+        model.History = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken);
 
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        // Delega o cálculo na API Django (que invoca o motor Python). O portal não calcula.
         var outcome = await _financeApiClient.SimulateAsync(new SimulationRequest
         {
             Strategy = model.Strategy,
@@ -228,9 +362,22 @@ public class StudentController : AuthenticatedControllerBase
             Meses = model.Meses
         }, cancellationToken);
 
-        if (outcome.Success)
+        if (outcome.Success && outcome.Result is not null)
         {
             model.Result = outcome.Result;
+            await _simulationHistoryService.SaveAsync(studentId.Value, new SimulationRequest
+            {
+                Strategy = model.Strategy,
+                ScenarioId = model.ScenarioId ?? 0,
+                RendimentoMensal = model.RendimentoMensal,
+                DespesasMensais = model.DespesasMensais,
+                EncargosFixos = model.EncargosFixos,
+                CapitalPoupanca = model.CapitalPoupanca,
+                Emprestimo = model.Emprestimo,
+                Meses = model.Meses
+            }, outcome.Result, cancellationToken);
+
+            model.History = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken);
         }
         else
         {
@@ -240,11 +387,7 @@ public class StudentController : AuthenticatedControllerBase
         return View(model);
     }
 
-    public IActionResult Objectives()
-    {
-        ApplyDashboardContext("Objetivos", "objectives", UserRoles.Student);
-        return View();
-    }
+    // ===== Desafios =====
 
     public async Task<IActionResult> Challenges(CancellationToken cancellationToken)
     {
@@ -320,6 +463,47 @@ public class StudentController : AuthenticatedControllerBase
         }
     }
 
+    // ===== Helpers =====
+
+    private async Task<EntriesIndexViewModel> BuildEntriesViewModelAsync(
+        int userId, int? scenarioId, string? typeFilter, CancellationToken ct)
+    {
+        var scenarios = await _scenarioService.GetUserScenariosAsync(userId, ct);
+        var entries = scenarioId.HasValue
+            ? await _entryService.GetScenarioEntriesAsync(userId, scenarioId.Value, typeFilter, ct)
+            : [];
+
+        var allEntries = scenarioId.HasValue
+            ? await _entryService.GetScenarioEntriesAsync(userId, scenarioId.Value, null, ct)
+            : [];
+
+        return new EntriesIndexViewModel
+        {
+            SelectedScenarioId = scenarioId,
+            AvailableScenarios = scenarios,
+            Entries = entries,
+            TypeFilter = typeFilter,
+            TotalIncome = allEntries.Where(e => e.IsIncome).Sum(e => e.Amount),
+            TotalExpense = allEntries.Where(e => !e.IsIncome).Sum(e => e.Amount)
+        };
+    }
+
+    private async Task<ObjectivesIndexViewModel> BuildObjectivesViewModelAsync(
+        int userId, int? scenarioId, CancellationToken ct)
+    {
+        var scenarios = await _scenarioService.GetUserScenariosAsync(userId, ct);
+        var goals = scenarioId.HasValue
+            ? await _goalService.GetScenarioGoalsAsync(userId, scenarioId.Value, ct)
+            : [];
+
+        return new ObjectivesIndexViewModel
+        {
+            SelectedScenarioId = scenarioId,
+            AvailableScenarios = scenarios,
+            Goals = goals
+        };
+    }
+
     private static string BuildJoinStatusMessage(JoinByAccessCodeResult result)
     {
         return result.TargetType switch
@@ -335,10 +519,7 @@ public class StudentController : AuthenticatedControllerBase
     }
 
     private async Task<StudentChallengeDetailsViewModel?> LoadChallengeDetailsViewModelAsync(
-        int studentId,
-        int challengeId,
-        string responseText,
-        CancellationToken cancellationToken)
+        int studentId, int challengeId, string responseText, CancellationToken cancellationToken)
     {
         var model = await _academicManagementService.GetStudentChallengeDetailsAsync(studentId, challengeId, cancellationToken);
         if (model is null)

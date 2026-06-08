@@ -1,0 +1,96 @@
+@model dotnet_mvc.ViewModels.Professor.ReviewSubmissionViewModel
+
+@{
+    ViewData["Title"] = "Avaliar submissão";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">@Model.ChallengeTitle</h1>
+        <p class="page-header__subtitle">@Model.StudentName · @Model.ClassroomName</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Professor" asp-action="Submissions">← Voltar às submissões</a>
+    </div>
+</div>
+
+<div style="display: grid; gap: var(--space-6); max-width: 880px;">
+
+    @* ===== Resposta do aluno ===== *@
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Resposta do aluno</h2>
+                <p class="card__subtitle">
+                    Submetido a <strong>@Model.SubmittedAtUtc.ToLocalTime().ToString("dd/MM/yyyy 'às' HH:mm")</strong>
+                    @if (Model.UpdatedAtUtc.HasValue)
+                    {
+                        <span> · atualizado a <strong>@Model.UpdatedAtUtc.Value.ToLocalTime().ToString("dd/MM/yyyy 'às' HH:mm")</strong></span>
+                    }
+                </p>
+            </div>
+            @if (Model.IsAlreadyGraded)
+            {
+                <span class="badge badge--success">Avaliada</span>
+            }
+            else
+            {
+                <span class="badge badge--warning">Pendente</span>
+            }
+        </div>
+
+        <div style="white-space: pre-line; color: var(--color-gray-700); line-height: 1.7; background: var(--color-gray-50); border-radius: var(--radius-md); padding: var(--space-4);">
+            @Model.ResponseText
+        </div>
+    </div>
+
+    @* ===== Formulário de avaliação ===== *@
+    <form asp-controller="Professor" asp-action="ReviewSubmission" asp-route-id="@Model.SubmissionId" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+        <div class="card">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">@(Model.IsAlreadyGraded ? "Corrigir avaliação" : "Avaliar")</h2>
+                    <p class="card__subtitle">Atribui uma nota de 0 a 20 e, opcionalmente, feedback ao aluno.</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group" style="max-width: 200px;">
+                    <label asp-for="Grade" class="form-label form-label--required">Nota (0–20)</label>
+                    <input asp-for="Grade"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           max="20"
+                           step="0.5"
+                           placeholder="Ex.: 17.5" />
+                    <span asp-validation-for="Grade" class="field-validation-error"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Feedback" class="form-label">Feedback</label>
+                <textarea asp-for="Feedback"
+                          class="form-textarea"
+                          rows="6"
+                          placeholder="Comentários, sugestões de melhoria, pontos fortes..."></textarea>
+                <span asp-validation-for="Feedback" class="field-validation-error"></span>
+                <span class="form-hint">O aluno poderá consultar este feedback na sua área de desafios.</span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary">
+                    @(Model.IsAlreadyGraded ? "Atualizar avaliação" : "Submeter avaliação")
+                </button>
+                <a class="btn btn--ghost" asp-controller="Professor" asp-action="Submissions">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <form asp-controller="Student" asp-action="Simulations" method="post">
+        <form asp-controller="Student" asp-action="Simulations" method="post" novalidate>
             <div asp-validation-summary="All" class="text-danger"></div>
 
             <div class="form-group">
@@ -192,6 +192,56 @@
     </div>
 
 </div>
+
+@* ===== Histórico de simulações ===== *@
+@if (Model.History is { Count: > 0 })
+{
+    <div class="card mt-6">
+        <div class="card__header">
+            <h2 class="card__title">Histórico de simulações</h2>
+            <span class="badge badge--neutral">Últimas @Model.History.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Estratégia</th>
+                        <th>Rendimento</th>
+                        <th>Despesas</th>
+                        <th>Meses</th>
+                        <th>Taxa esforço</th>
+                        <th>Montante final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.History)
+                    {
+                        <tr>
+                            <td class="text-sm text-muted">@h.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge badge--neutral">@h.StrategyLabel</span></td>
+                            <td>@Money(h.RendimentoMensal)</td>
+                            <td>@Money(h.DespesasMensais)</td>
+                            <td>@h.Meses</td>
+                            <td>
+                                @if (h.TaxaEsforco.HasValue)
+                                {
+                                    <span>@h.TaxaEsforco.Value.ToString("0.##", pt)%</span>
+                                    @if (!string.IsNullOrEmpty(h.TaxaEsforcoClassificacao))
+                                    {
+                                        <span class="text-muted text-sm"> · @h.TaxaEsforcoClassificacao</span>
+                                    }
+                                }
+                                else { <span class="text-muted">—</span> }
+                            </td>
+                            <td>@(h.MontanteFinal.HasValue ? Money(h.MontanteFinal.Value) : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

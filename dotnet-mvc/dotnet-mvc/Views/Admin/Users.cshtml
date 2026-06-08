@@ -1,127 +1,197 @@
+@model dotnet_mvc.ViewModels.Admin.UsersIndexViewModel
+
 @{
     ViewData["Title"] = "Utilizadores";
-    ViewData["PageTitle"] = "Gerir utilizadores";
-    ViewData["Role"] = "Admin";
-    ViewData["ActiveMenu"] = "users";
-    ViewData["UserName"] = "Administrador";
-    ViewData["UserRoleLabel"] = "Admin · ISTEC";
     Layout = "_DashboardLayout";
-
-    var users = new[]
-    {
-        new { Name = "Maria Costa",     Email = "maria.costa@escola.pt",   Role = "Aluno",      Active = true,  Joined = "12 abril 2026" },
-        new { Name = "Prof. Santos",    Email = "santos@escola.pt",        Role = "Professor",  Active = true,  Joined = "05 set 2025" },
-        new { Name = "João Pereira",    Email = "joao.p@escola.pt",        Role = "Aluno",      Active = true,  Joined = "20 abril 2026" },
-        new { Name = "Ana Lopes",       Email = "ana.lopes@escola.pt",     Role = "Aluno",      Active = false, Joined = "15 mar 2026" },
-        new { Name = "Prof. Marques",   Email = "marques@escola.pt",       Role = "Professor",  Active = true,  Joined = "10 out 2025" },
-        new { Name = "Bruno Almeida",   Email = "bruno.a@escola.pt",       Role = "Aluno",      Active = true,  Joined = "02 maio 2026" }
-    };
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-header__title">Gerir utilizadores</h1>
-        <p class="page-header__subtitle">@users.Length utilizadores no total.</p>
-    </div>
-    <div class="page-header__actions">
-        <button class="btn btn--outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar
-        </button>
-        <button class="btn btn--primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Novo utilizador
-        </button>
+        <p class="page-header__subtitle">@Model.TotalCount utilizador@(Model.TotalCount == 1 ? "" : "es") no total.</p>
     </div>
 </div>
 
-<div class="filters-bar">
-    <span class="filters-bar__label">Pesquisar:</span>
+<div class="grid grid--4 mb-8">
+    <div class="stat-card">
+        <div class="stat-card__icon">👥</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Total</div>
+            <div class="stat-card__value">@Model.TotalCount</div>
+            <div class="stat-card__hint">Registados</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success">✓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Ativos</div>
+            <div class="stat-card__value">@Model.ActiveCount</div>
+            <div class="stat-card__hint">Com acesso ativo</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info">🎓</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Alunos</div>
+            <div class="stat-card__value">@Model.StudentCount</div>
+            <div class="stat-card__hint">Papel de aluno</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__icon">📋</div>
+        <div class="stat-card__content">
+            <div class="stat-card__label">Professores</div>
+            <div class="stat-card__value">@Model.ProfessorCount</div>
+            <div class="stat-card__hint">Papel de professor</div>
+        </div>
+    </div>
+</div>
+
+@* ===== Filtros ===== *@
+<form method="get" asp-controller="Admin" asp-action="Users" class="filters-bar">
     <input type="search"
+           name="search"
+           value="@Model.Search"
            class="form-control"
-           placeholder="Nome ou email…"
+           placeholder="Pesquisar por nome ou email…"
            style="max-width: 280px; padding: var(--space-2) var(--space-3);" />
-    <select class="filters-bar__select">
-        <option>Todos os roles</option>
-        <option>Aluno</option>
-        <option>Professor</option>
-        <option>Admin</option>
-    </select>
-    <select class="filters-bar__select">
-        <option>Todos os estados</option>
-        <option>Ativos</option>
-        <option>Inativos</option>
-    </select>
-</div>
 
-<div class="table-wrapper">
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Utilizador</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Estado</th>
-                    <th>Data de registo</th>
-                    <th style="text-align: right;">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var u in users)
-                {
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: var(--space-3);">
-                                <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
-                                    @u.Name[0]
-                                </div>
-                                <strong>@u.Name</strong>
-                            </div>
-                        </td>
-                        <td><span class="text-muted">@u.Email</span></td>
-                        <td>
-                            @if (u.Role == "Professor")
-                            {
-                                <span class="badge badge--info">@u.Role</span>
-                            }
-                            else if (u.Role == "Admin")
-                            {
-                                <span class="badge badge--danger">@u.Role</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge--neutral">@u.Role</span>
-                            }
-                        </td>
-                        <td>
-                            @if (u.Active)
-                            {
-                                <span class="badge badge--success badge--dot">Ativo</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge--danger badge--dot">Inativo</span>
-                            }
-                        </td>
-                        <td><span class="text-muted">@u.Joined</span></td>
-                        <td style="text-align: right;">
-                            <button class="btn btn--ghost btn--sm">Editar role</button>
-                            @if (u.Active)
-                            {
-                                <button class="btn btn--ghost btn--sm text-danger"
-                                        data-confirm="Desativar @u.Name?">
-                                    Desativar
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn--ghost btn--sm text-success">Ativar</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <select class="filters-bar__select" name="role" onchange="this.form.submit()">
+        <option value="" selected="@(Model.RoleFilter == null)">Todos os papéis</option>
+        <option value="Student" selected="@(Model.RoleFilter == "Student")">Aluno</option>
+        <option value="Professor" selected="@(Model.RoleFilter == "Professor")">Professor</option>
+        <option value="Admin" selected="@(Model.RoleFilter == "Admin")">Administrador</option>
+    </select>
+
+    <select class="filters-bar__select" name="status" onchange="this.form.submit()">
+        <option value="" selected="@(Model.StatusFilter == null)">Todos os estados</option>
+        <option value="active" selected="@(Model.StatusFilter == "active")">Ativos</option>
+        <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inativos</option>
+    </select>
+
+    <button type="submit" class="btn btn--outline btn--sm">Pesquisar</button>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Search) || Model.RoleFilter != null || Model.StatusFilter != null)
+    {
+        <a class="btn btn--ghost btn--sm" asp-controller="Admin" asp-action="Users">Limpar</a>
+    }
+</form>
+
+@if (Model.Users.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state__icon">👤</div>
+        <div class="empty-state__title">Sem utilizadores</div>
+        <p class="empty-state__text">
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || Model.RoleFilter != null || Model.StatusFilter != null)
+            {
+                <span>Nenhum utilizador corresponde aos filtros aplicados.</span>
+            }
+            else
+            {
+                <span>Ainda não existem utilizadores registados.</span>
+            }
+        </p>
     </div>
-</div>
+}
+else
+{
+    <div class="table-wrapper">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Utilizador</th>
+                        <th>Email</th>
+                        <th>Papel</th>
+                        <th>Estado</th>
+                        <th>Último acesso</th>
+                        <th style="text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model.Users)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    <div class="sidebar__avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                        @u.Name[0]
+                                    </div>
+                                    <strong>@u.Name</strong>
+                                </div>
+                            </td>
+                            <td><span class="text-muted">@u.Email</span></td>
+                            <td>
+                                @switch (u.Role)
+                                {
+                                    case "Professor":
+                                        <span class="badge badge--info">@u.RoleLabel</span>
+                                        break;
+                                    case "Admin":
+                                        <span class="badge badge--danger">@u.RoleLabel</span>
+                                        break;
+                                    default:
+                                        <span class="badge badge--neutral">@u.RoleLabel</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @if (u.IsActive)
+                                {
+                                    <span class="badge badge--success badge--dot">Ativo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge--danger badge--dot">Inativo</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="text-muted">
+                                    @(u.LastLoginAtUtc.HasValue
+                                        ? u.LastLoginAtUtc.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        : "Nunca")
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display:flex; gap:var(--space-2); justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+                                    @* Editar papel *@
+                                    <form asp-controller="Admin" asp-action="EditUserRole" asp-route-id="@u.Id"
+                                          method="post" style="display:flex; gap:var(--space-1); align-items:center;">
+                                        <select name="role" class="form-select" style="padding: var(--space-1) var(--space-2); font-size:0.8rem; width:auto;">
+                                            <option value="Student" selected="@(u.Role == "Student")">Aluno</option>
+                                            <option value="Professor" selected="@(u.Role == "Professor")">Professor</option>
+                                            <option value="Admin" selected="@(u.Role == "Admin")">Admin</option>
+                                        </select>
+                                        <button type="submit" class="btn btn--ghost btn--sm"
+                                                onclick="return confirm('Alterar o perfil de @u.Name?')">Alterar</button>
+                                    </form>
+
+                                    @* Ativar / Desativar *@
+                                    <form asp-controller="Admin" asp-action="ToggleUserStatus" asp-route-id="@u.Id"
+                                          method="post" style="display:inline;">
+                                        @if (u.IsActive)
+                                        {
+                                            <button type="submit" class="btn btn--ghost btn--sm"
+                                                    style="color: var(--color-danger);"
+                                                    onclick="return confirm('Desativar @u.Name? A sessão ativa será terminada.')">
+                                                Desativar
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn--ghost btn--sm"
+                                                    style="color: var(--color-success);">
+                                                Ativar
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
