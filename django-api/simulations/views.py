@@ -6,10 +6,6 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-
-from simulations.models import Entry, Objective, SimulationHistory
-
-
 from simulations.calculators.taxa_esforco import calcular_taxa_esforco
 from simulations.calculators.capitalizacao_composta import calcular_capitalizacao_composta
 from simulations.calculators.amortizacao_price import calcular_amortizacao
@@ -64,28 +60,6 @@ class ProjecaoPoupancaResponseSerializer(serializers.Serializer):
     poupanca_acumulada = serializers.FloatField()
     saldo_medio_mensal = serializers.FloatField()
     break_even_mes     = serializers.IntegerField(allow_null=True)
-
-class EntrySerializer(serializers.Serializer):
-    scenario_id = serializers.IntegerField()
-    type        = serializers.CharField()
-    category    = serializers.CharField()
-    amount      = serializers.FloatField()
-    month       = serializers.IntegerField()
-    year        = serializers.IntegerField()
-    recurrence  = serializers.CharField()
-
-class ObjectiveSerializer(serializers.Serializer):
-    scenario_id   = serializers.IntegerField()
-    description   = serializers.CharField()
-    targetvalue   = serializers.FloatField()
-    termmonths    = serializers.IntegerField()
-    current_value = serializers.FloatField()
-
-class SimulationHistorySerializer(serializers.Serializer):
-    scenario_id     = serializers.IntegerField()
-    executiondate   = serializers.DateTimeField(read_only=True)
-    jsonresults     = serializers.JSONField()
-    simulation_type = serializers.CharField()
 
 class SimulateSerializer(serializers.Serializer):
     strategy          = serializers.ChoiceField(choices=['conservative', 'moderate', 'aggressive'], default='moderate')
@@ -212,158 +186,6 @@ def projecao_poupanca(request):
         return Response({"erro": str(e)}, status=400)
 
 
-@extend_schema(
-    methods=['GET'],
-    tags=['Lançamento'],
-    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
-    responses={200: EntrySerializer(many=True)},
-)
-@extend_schema(
-    methods=['POST'],
-    tags=['Lançamento'],
-    request=EntrySerializer,
-    responses={201: EntrySerializer},
-)
-@api_view(['GET', 'POST'])
-def entries(request):
-    if request.method == 'POST':
-        logger.info("Criar entry — data: %s", request.data)
-
-        serializer = EntrySerializer(data=request.data)
-
-        if not serializer.is_valid():
-            logger.warning("Invalid entry data — errors: %s", serializer.errors)
-            return Response(serializer.errors, status=400)
-
-        try:
-            entry = Entry(**serializer.validated_data)
-            entry.save()
-            logger.info("Entry criado com sucesso — id: %s", entry.id)
-            return Response(EntrySerializer(entry).data, status=201)
-
-        except Exception as e:
-            logger.error("Entry error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-    elif request.method == 'GET':
-        logger.info("Listar entries — scenario_id: %s", request.query_params.get('scenario_id'))
-
-        scenario_id = request.query_params.get('scenario_id')
-
-        if not scenario_id:
-            return Response({"erro": "scenario_id é obrigatório"}, status=400)
-
-        try:
-            entries_list = Entry.objects.filter(scenario_id=scenario_id)
-            serializer = EntrySerializer(entries_list, many=True)
-            logger.info("Entries listados — total: %s", entries_list.count())
-            return Response(serializer.data, status=200)
-
-        except Exception as e:
-            logger.error("Entry list error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-
-@extend_schema(
-    methods=['GET'],
-    tags=['Lançamento'],
-    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
-    responses={200: ObjectiveSerializer(many=True)},
-)
-@extend_schema(
-    methods=['POST'],
-    tags=['Lançamento'],
-    request=ObjectiveSerializer,
-    responses={201: ObjectiveSerializer},
-)
-@api_view(['GET', 'POST'])
-def objectives(request):
-    if request.method == 'POST':
-        logger.info("Criar objectivos — data: %s", request.data)
-
-        serializer = ObjectiveSerializer(data=request.data)
-        if not serializer.is_valid():
-            logger.warning("Invalid objective data - errors: %s", serializer.errors)
-            return Response(serializer.errors, status=400)
-
-        try:
-            objective = Objective(**serializer.validated_data)
-            objective.save()
-            logger.info("Objectivos criado com sucesso — id: %s", objective.id)
-            return Response(ObjectiveSerializer(objective).data, status=201)
-        except Exception as e:
-            logger.error("Objective error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-    elif request.method == 'GET':
-        logger.info("Listar objetivos — scenario_id: %s", request.query_params.get('scenario_id'))
-
-        scenario_id = request.query_params.get('scenario_id')
-
-        if not scenario_id:
-            return Response({"erro": "scenario_id é obrigatório"}, status=400)
-
-        try:
-            objective_list = Objective.objects.filter(scenario_id=scenario_id)
-            serializer = ObjectiveSerializer(objective_list, many=True)
-            logger.info("Objectivos listados — total: %s", objective_list.count())
-            return Response(serializer.data, status=200)
-
-        except Exception as e:
-            logger.error("Objectivo list error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-
-@extend_schema(
-    methods=['GET'],
-    tags=['Simulações'],
-    parameters=[OpenApiParameter('scenario_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=True)],
-    responses={200: SimulationHistorySerializer(many=True)},
-)
-@extend_schema(
-    methods=['POST'],
-    tags=['Simulações'],
-    request=SimulationHistorySerializer,
-    responses={201: SimulationHistorySerializer},
-)
-@api_view(['GET', 'POST'])
-def simulation_history(request):
-    if request.method == 'POST':
-        logger.info("Guardar simulação — data: %s", request.data)
-
-        serializer = SimulationHistorySerializer(data=request.data)
-        if not serializer.is_valid():
-            logger.warning("Invalid simulation data — errors: %s", serializer.errors)
-            return Response(serializer.errors, status=400)
-
-        try:
-            simulation = SimulationHistory(**serializer.validated_data)
-            simulation.save()
-            logger.info("Simulação guardada com sucesso — id: %s", simulation.id)
-            return Response(SimulationHistorySerializer(simulation).data, status=201)
-        except Exception as e:
-            logger.error("Simulation history error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-    elif request.method == 'GET':
-        logger.info("Listar histórico — scenario_id: %s", request.query_params.get('scenario_id'))
-
-        scenario_id = request.query_params.get('scenario_id')
-
-        if not scenario_id:
-            return Response({"erro": "scenario_id é obrigatório"}, status=400)
-
-        try:
-            history_list = SimulationHistory.objects.filter(scenario_id=scenario_id)
-            serializer = SimulationHistorySerializer(history_list, many=True)
-            logger.info("Histórico listado — total: %s", history_list.count())
-            return Response(serializer.data, status=200)
-
-        except Exception as e:
-            logger.error("Simulation history list error — %s", str(e))
-            return Response({"erro": str(e)}, status=400)
-
-
 @extend_schema(tags=['Simulações'], request=SimulateSerializer, responses={200: OpenApiTypes.OBJECT})
 @api_view(['POST'])
 def simulate(request):
@@ -393,17 +215,6 @@ def simulate(request):
     except ValueError as e:
         logger.warning("Dados de simulação inválidos — %s", str(e))
         return Response({"erro": str(e)}, status=400)
-
-    # Guarda automaticamente no histórico
-    try:
-        SimulationHistory(
-            scenario_id=data['scenario_id'],
-            simulation_type=strategy_type,
-            jsonresults=result
-        ).save()
-        logger.info("Simulação guardada no histórico — scenario_id: %s", data['scenario_id'])
-    except Exception as e:
-        logger.warning("Erro ao guardar histórico — %s", str(e))
 
     logger.info("Simulation completed — strategy: %s", strategy_type)
     return Response(result)

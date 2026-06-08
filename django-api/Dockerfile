@@ -24,9 +24,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "config.wsgi:application", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "2", \
-     "--timeout", "60", \
-     "--worker-tmp-dir", "/dev/shm", \
-     "--access-logfile", "-"]
+CMD ["sh", "-c", "python manage.py migrate --run-syncdb && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 60 --worker-tmp-dir /dev/shm --access-logfile -"]

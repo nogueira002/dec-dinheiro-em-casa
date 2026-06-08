@@ -1,12 +1,6 @@
 import os
 from pathlib import Path
 
-try:
-    import pymysql
-    pymysql.install_as_MySQLdb()
-except ImportError:
-    pass
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
@@ -19,7 +13,6 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 
-# Application definition
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -53,24 +46,12 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-_MYSQL_HOST = os.environ.get("MYSQL_HOST")
-
-if _MYSQL_HOST:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("MYSQL_DB", "dec_financeira"),
-            "USER": os.environ.get("MYSQL_USER", "root"),
-            "PASSWORD": os.environ.get("MYSQL_PASSWORD", ""),
-            "HOST": _MYSQL_HOST,
-            "PORT": os.environ.get("MYSQL_PORT", "3306"),
-            "OPTIONS": {
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "/tmp/django_runtime.db",
     }
-else:
-    DATABASES = {}
+}
 
 
 # Internationalization
@@ -92,9 +73,9 @@ STATIC_URL = "static/"
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-
-    # Desativa o Browsable API do DRF, a API retorna apenas JSON
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_PERMISSION_CLASSES": [],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -104,7 +85,6 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "Geral",        "description": "Endpoints gerais da API"},
         {"name": "Calculadores", "description": "Cálculos financeiros"},
-        {"name": "Lançamento",   "description": "Gestão de lançamentos e objetivos financeiros"},
         {"name": "Simulações",   "description": "Simulações financeiras completas"},
     ],
     "SWAGGER_UI_SETTINGS": {
