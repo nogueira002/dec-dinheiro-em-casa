@@ -79,12 +79,17 @@ else
         </div>
     </div>
 
-    @* Formulário de novo lançamento *@
-    <div class="card mb-6">
+    @* Formulário de novo lançamento / edição *@
+    <div class="card mb-6" id="entryFormCard">
         <div class="card__header">
-            <h2 class="card__title">Novo lançamento</h2>
+            <h2 class="card__title" id="entryFormTitle">Novo lançamento</h2>
         </div>
-        <form asp-controller="Student" asp-action="AddEntry" asp-route-scenarioId="@Model.SelectedScenarioId" method="post">
+        <form id="entryForm"
+              action="@Url.Action("AddEntry", "Student", new { scenarioId = Model.SelectedScenarioId })"
+              data-add-url="@Url.Action("AddEntry", "Student", new { scenarioId = Model.SelectedScenarioId })"
+              data-edit-base-url="@Url.Action("UpdateEntry", "Student", new { scenarioId = Model.SelectedScenarioId })&entryId="
+              method="post">
+            @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
             <div class="form-row">
                 <div class="form-group">
@@ -126,8 +131,18 @@ else
                     <span class="text-danger" asp-validation-for="Form.Year"></span>
                 </div>
             </div>
+            <div id="recurringRow" style="display:none; margin-bottom: var(--space-4);">
+                <label style="display:flex; align-items:center; gap: var(--space-2); cursor:pointer; font-size:0.875rem; font-weight:500; color: var(--color-gray-700);">
+                    <input type="checkbox" asp-for="Form.IsRecurring" style="width:1rem; height:1rem; accent-color: var(--color-primary); cursor:pointer;" />
+                    Encargo fixo (mensal recorrente) — ex: renda, seguro, prestação
+                </label>
+                <p style="font-size:0.8rem; color: var(--color-gray-500); margin: 0.25rem 0 0 1.5rem;">
+                    Marca esta opção para que esta despesa seja contabilizada como encargo fixo nas simulações.
+                </p>
+            </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn--primary">Adicionar</button>
+                <button type="submit" id="entrySubmitBtn" class="btn btn--primary">Adicionar</button>
+                <button type="button" id="entryCancelBtn" class="btn btn--ghost" style="display:none" onclick="cancelEditEntry()">Cancelar edição</button>
             </div>
         </form>
     </div>
@@ -167,6 +182,7 @@ else
                             <th>Valor</th>
                             <th>Mês</th>
                             <th>Ano</th>
+                            <th>Fixo</th>
                             <th style="text-align: right;">Ações</th>
                         </tr>
                     </thead>
@@ -190,7 +206,21 @@ else
                                 </td>
                                 <td>@e.MonthName</td>
                                 <td>@e.Year</td>
-                                <td style="text-align: right;">
+                                <td>
+                                    @if (!e.IsIncome && e.IsRecurring)
+                                    {
+                                        <span class="badge badge--warning" title="Encargo fixo mensal">Fixo</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--color-gray-400)">—</span>
+                                    }
+                                </td>
+                                <td style="text-align: right; white-space:nowrap;">
+                                    <button type="button" class="btn btn--ghost btn--sm"
+                                            onclick="editEntry(@e.Id,'@(e.IsIncome ? "Income" : "Expense")','@e.Category.Replace("'","\\'")',@e.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),@e.Month,@e.Year,@(e.IsRecurring && !e.IsIncome ? "true" : "false"))">
+                                        Editar
+                                    </button>
                                     <form asp-controller="Student" asp-action="DeleteEntry"
                                           asp-route-scenarioId="@Model.SelectedScenarioId"
                                           asp-route-entryId="@e.Id" method="post"
@@ -211,26 +241,67 @@ else
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        (function () {
-            var incomeCategories = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dotnet_mvc.ViewModels.Student.CreateEntryViewModel.IncomeCategories));
-            var expenseCategories = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dotnet_mvc.ViewModels.Student.CreateEntryViewModel.ExpenseCategories));
-            var typeSelect = document.getElementById('entryTypeSelect');
-            var catSelect = document.getElementById('categorySelect');
+        var incomeCategories  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dotnet_mvc.ViewModels.Student.CreateEntryViewModel.IncomeCategories));
+        var expenseCategories = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dotnet_mvc.ViewModels.Student.CreateEntryViewModel.ExpenseCategories));
 
-            function updateCategories() {
-                var cats = typeSelect.value === 'Income' ? incomeCategories : expenseCategories;
-                catSelect.innerHTML = '';
-                cats.forEach(function (c) {
-                    var opt = document.createElement('option');
-                    opt.value = c;
-                    opt.textContent = c;
-                    catSelect.appendChild(opt);
-                });
-            }
+        var typeSelect   = document.getElementById('entryTypeSelect');
+        var catSelect    = document.getElementById('categorySelect');
+        var recurringRow = document.getElementById('recurringRow');
+        var entryForm    = document.getElementById('entryForm');
+        var formTitle    = document.getElementById('entryFormTitle');
+        var submitBtn    = document.getElementById('entrySubmitBtn');
+        var cancelBtn    = document.getElementById('entryCancelBtn');
 
-            if (typeSelect) {
-                typeSelect.addEventListener('change', updateCategories);
+        function updateCategories(keepSelected) {
+            var isExpense = typeSelect.value === 'Expense';
+            var cats = isExpense ? expenseCategories : incomeCategories;
+            var current = catSelect.value;
+            catSelect.innerHTML = '';
+            cats.forEach(function (c) {
+                var opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                catSelect.appendChild(opt);
+            });
+            if (keepSelected && cats.indexOf(current) >= 0) catSelect.value = current;
+            if (recurringRow) {
+                recurringRow.style.display = isExpense ? 'block' : 'none';
+                if (!isExpense) {
+                    var cb = recurringRow.querySelector('input[type=checkbox]');
+                    if (cb) cb.checked = false;
+                }
             }
-        })();
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function () { updateCategories(false); });
+            updateCategories(false);
+        }
+
+        function editEntry(id, type, category, amount, month, year, recurring) {
+            typeSelect.value = type;
+            updateCategories(false);
+            catSelect.value = category;
+            document.querySelector('[name="Form.Amount"]').value = amount;
+            document.querySelector('[name="Form.Month"]').value = month;
+            document.querySelector('[name="Form.Year"]').value = year;
+            var cb = recurringRow ? recurringRow.querySelector('input[type=checkbox]') : null;
+            if (cb) cb.checked = recurring;
+
+            entryForm.action = entryForm.dataset.editBaseUrl + id;
+            formTitle.textContent = 'Editar lançamento';
+            submitBtn.textContent = 'Guardar alterações';
+            cancelBtn.style.display = '';
+            entryForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function cancelEditEntry() {
+            entryForm.action = entryForm.dataset.addUrl;
+            entryForm.reset();
+            updateCategories(false);
+            formTitle.textContent = 'Novo lançamento';
+            submitBtn.textContent = 'Adicionar';
+            cancelBtn.style.display = 'none';
+        }
     </script>
 }

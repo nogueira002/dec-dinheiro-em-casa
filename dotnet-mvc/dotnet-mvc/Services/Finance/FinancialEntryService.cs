@@ -9,6 +9,7 @@ public interface IFinancialEntryService
 {
     Task<IReadOnlyList<EntryListItemViewModel>> GetScenarioEntriesAsync(int userId, int scenarioId, string? typeFilter, CancellationToken ct = default);
     Task<bool> AddEntryAsync(int userId, int scenarioId, CreateEntryViewModel model, CancellationToken ct = default);
+    Task<bool> UpdateEntryAsync(int userId, int entryId, CreateEntryViewModel model, CancellationToken ct = default);
     Task<bool> DeleteEntryAsync(int userId, int entryId, CancellationToken ct = default);
 }
 
@@ -84,6 +85,25 @@ public sealed class FinancialEntryService : IFinancialEntryService
             IsRecurring = model.IsRecurring,
             CreatedAtUtc = DateTime.UtcNow
         });
+
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> UpdateEntryAsync(int userId, int entryId, CreateEntryViewModel model, CancellationToken ct = default)
+    {
+        var entry = await _db.FinancialEntries
+            .Include(e => e.Scenario)
+            .SingleOrDefaultAsync(e => e.Id == entryId && e.Scenario.OwnerId == userId, ct);
+
+        if (entry is null) return false;
+
+        entry.EntryType  = model.EntryType == "Income" ? "Income" : "Expense";
+        entry.Category   = model.Category.Trim();
+        entry.Amount     = model.Amount;
+        entry.Month      = model.Month;
+        entry.Year       = model.Year;
+        entry.IsRecurring = model.IsRecurring;
 
         await _db.SaveChangesAsync(ct);
         return true;

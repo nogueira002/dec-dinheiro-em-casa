@@ -1,0 +1,578 @@
+@using System.Globalization
+@model dotnet_mvc.ViewModels.Student.ChallengeWorkspaceViewModel
+
+@{
+    ViewData["Title"]      = Model.Challenge.Title;
+    ViewData["PageTitle"]  = "Workspace";
+    ViewData["Role"]       = "Student";
+    ViewData["ActiveMenu"] = "challenges";
+    Layout = "_DashboardLayout";
+
+    var pt   = CultureInfo.GetCultureInfo("pt-PT");
+    string Money(decimal v) => string.Format(pt, "{0:N2} €", v);
+
+    var sim       = Model.Simulation;
+    var challenge = Model.Challenge;
+    var activeTab = Model.ActiveTab;
+
+    string statusBadge = challenge.StatusKey switch
+    {
+        "expired"   => $"<span class=\"badge badge--danger\">{challenge.StatusLabel}</span>",
+        "pending"   => $"<span class=\"badge badge--warning\">{challenge.StatusLabel}</span>",
+        "submitted" => $"<span class=\"badge badge--info\">{challenge.StatusLabel}</span>",
+        "graded"    => $"<span class=\"badge badge--success\">{challenge.StatusLabel}</span>",
+        _           => $"<span class=\"badge badge--neutral\">{challenge.StatusLabel}</span>"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">@challenge.Title</h1>
+        <p class="page-header__subtitle">@challenge.Professor · @challenge.ClassroomName</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">← Desafios</a>
+    </div>
+</div>
+
+<div class="challenge-workspace">
+
+    @* ── Enunciado (colapsável) ────────────────────────────── *@
+    <div class="workspace-banner" data-banner>
+        <div class="workspace-banner__header" data-banner-toggle>
+            <div>
+                <div class="workspace-banner__title-row">
+                    <h2 class="workspace-banner__title">Enunciado</h2>
+                    @Html.Raw(statusBadge)
+                    @if (!string.IsNullOrWhiteSpace(challenge.GradeDisplay))
+                    {
+                        <span class="badge badge--success">@challenge.GradeDisplay</span>
+                    }
+                </div>
+                <p class="workspace-banner__meta">
+                    Entrega até <strong>@challenge.Deadline.ToString("dd 'de' MMMM 'de' yyyy")</strong>
+                    @if (challenge.SubmittedAtUtc.HasValue)
+                    {
+                        <span> · Submetido em @challenge.SubmittedAtUtc.Value.ToString("dd/MM/yyyy 'às' HH:mm")</span>
+                    }
+                </p>
+            </div>
+            <button type="button" class="workspace-banner__toggle-btn" data-banner-toggle-btn>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                <span>Fechar</span>
+            </button>
+        </div>
+        <div class="workspace-banner__body" data-banner-body>
+            <div id="ws-desc-src" style="display:none">@challenge.Description</div>
+            <div id="ws-desc-rendered"></div>
+        </div>
+    </div>
+
+    @* ── Aviso: sem cenários criados ──────────────────────── *@
+    @if (sim.Scenarios.Count == 0)
+    {
+        <div class="alert alert--warning">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+                <strong>Ainda não tens nenhum cenário criado.</strong>
+                Para poderes simular, precisas de ter um cenário com os dados financeiros relevantes para este desafio.
+                <a asp-controller="Student" asp-action="Scenarios" style="font-weight:600;color:inherit;text-decoration:underline">Criar cenário agora →</a>
+            </div>
+        </div>
+    }
+
+    @* ── Tabs ──────────────────────────────────────────────── *@
+    <div>
+        <div class="workspace-tabs" role="tablist">
+            <button type="button"
+                    class="workspace-tab-btn @(activeTab == "simulate" ? "workspace-tab-btn--active" : "")"
+                    data-tab-btn="simulate" role="tab">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Simular
+            </button>
+            <button type="button"
+                    class="workspace-tab-btn @(activeTab == "respond" ? "workspace-tab-btn--active" : "")"
+                    data-tab-btn="respond" role="tab">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                Responder
+                @if (challenge.HasSubmission)
+                {
+                    <span class="workspace-tab-dot"></span>
+                }
+            </button>
+            <button type="button"
+                    class="workspace-tab-btn @(activeTab == "compare" ? "workspace-tab-btn--active" : "")"
+                    data-tab-btn="compare" role="tab">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Comparar estratégias
+            </button>
+        </div>
+
+        @* ── Panel: Simular ────────────────────────────────── *@
+        <div class="workspace-panel @(activeTab == "simulate" ? "is-active" : "")" data-tab-panel="simulate">
+
+            @if (!string.IsNullOrEmpty(sim.ErrorMessage))
+            {
+                <div class="alert alert--danger" style="margin-bottom:1.25rem">
+                    <span>⚠</span>
+                    <div>@sim.ErrorMessage</div>
+                </div>
+            }
+
+            <div class="workspace-sim-layout">
+
+                @* Formulário *@
+                <div class="card" style="align-self:start">
+                    <div class="card__header">
+                        <div>
+                            <h3 class="card__title">Parâmetros</h3>
+                            <p class="card__subtitle">Define a tua simulação</p>
+                        </div>
+                    </div>
+
+                    <form asp-controller="Student" asp-action="ChallengeWorkspaceSimulate" asp-route-id="@challenge.Id" method="post" novalidate>
+                        <div asp-validation-summary="All" class="text-danger" style="margin-bottom:1rem"></div>
+
+                        <div class="form-group">
+                            <label class="form-label">Cenário</label>
+                            <select class="form-select" name="ScenarioId" id="sim-scenario-id">
+                                <option value="">— Sem cenário associado —</option>
+                                @foreach (var sc in sim.Scenarios)
+                                {
+                                    <option value="@sc.Id" selected="@(sim.ScenarioId == sc.Id ? "selected" : null)">@sc.Name</option>
+                                }
+                            </select>
+                            <span class="form-hint">Ao selecionar um cenário, os campos são preenchidos automaticamente a partir dos teus lançamentos.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Rendimento mensal (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0.01"
+                                   name="RendimentoMensal" id="sim-rendimento-mensal" value="@sim.RendimentoMensal" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Despesas mensais (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0"
+                                   name="DespesasMensais" id="sim-despesas-mensais" value="@sim.DespesasMensais" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Encargos fixos (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0"
+                                   name="EncargosFixos" id="sim-encargos-fixos" value="@sim.EncargosFixos" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Capital para poupança (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0"
+                                   name="CapitalPoupanca" id="sim-capital-poupanca" value="@sim.CapitalPoupanca" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Empréstimo (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0"
+                                   name="Emprestimo" id="sim-emprestimo" value="@sim.Emprestimo" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Período (meses)</label>
+                            <input class="form-control" type="number" min="3" max="120"
+                                   name="Meses" value="@sim.Meses" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Estratégia</label>
+                            <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                                <label class="option-card">
+                                    <input type="radio" name="Strategy" value="conservative" @(sim.Strategy == "conservative" ? "checked" : "") />
+                                    <div class="option-card__title">🛡️ Conservadora</div>
+                                    <div class="option-card__desc">Risco baixo · retorno previsível</div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="Strategy" value="moderate" @(sim.Strategy == "moderate" ? "checked" : "") />
+                                    <div class="option-card__title">⚖️ Moderada</div>
+                                    <div class="option-card__desc">Equilíbrio entre risco e retorno</div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="Strategy" value="aggressive" @(sim.Strategy == "aggressive" ? "checked" : "") />
+                                    <div class="option-card__title">🚀 Agressiva</div>
+                                    <div class="option-card__desc">Risco alto · retorno potencial elevado</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn--primary btn--block">Calcular simulação</button>
+                        </div>
+                    </form>
+                </div>
+
+                @* Resultados *@
+                <div>
+                    @if (!sim.HasResult)
+                    {
+                        <div class="card">
+                            <div class="chart-placeholder">
+                                <div class="chart-placeholder__label">Preenche os parâmetros e calcula uma simulação para ver os resultados.</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        var r = sim.Result!;
+                        <div class="grid grid--2 mb-6">
+                            <div class="result-card">
+                                <div class="result-card__label">Valor final acumulado</div>
+                                <div class="result-card__value">
+                                    @(r.Capitalizacao is not null ? Money(r.Capitalizacao.MontanteFinal) : "—")
+                                </div>
+                                <div class="result-card__hint">
+                                    @(r.Capitalizacao is not null
+                                        ? $"Juros: {Money(r.Capitalizacao.JurosGerados)} em {sim.Meses} meses"
+                                        : "Sem capital de poupança")
+                                </div>
+                            </div>
+                            <div class="result-card result-card--neutral">
+                                <div class="result-card__label">Taxa de esforço</div>
+                                <div class="result-card__value text-primary">
+                                    @(r.TaxaEsforco is not null ? $"{r.TaxaEsforco.TaxaEsforco.ToString("0.##", pt)}%" : "—")
+                                </div>
+                                <div class="result-card__hint">@(r.TaxaEsforco?.Classificacao ?? "—")</div>
+                            </div>
+                            <div class="result-card result-card--neutral">
+                                <div class="result-card__label">Break-even</div>
+                                <div class="result-card__value">
+                                    @(r.Projecao?.BreakEvenMes is int be ? $"{be} meses" : "Não atingido")
+                                </div>
+                                <div class="result-card__hint">Mês em que a poupança fica positiva</div>
+                            </div>
+                            <div class="result-card result-card--neutral">
+                                <div class="result-card__label">Custo total do crédito</div>
+                                <div class="result-card__value">
+                                    @(r.Credito is not null ? Money(r.Credito.CustoTotal) : "—")
+                                </div>
+                                <div class="result-card__hint">
+                                    @(r.Credito is not null
+                                        ? $"Prestação: {Money(r.Credito.PrestacaoMensal)}/mês · Juros: {Money(r.Credito.JurosTotais)}"
+                                        : "Sem empréstimo")
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (r.Projecao is not null)
+                        {
+                            <div class="card">
+                                <div class="card__header">
+                                    <h3 class="card__title">Projeção de poupança</h3>
+                                    <span class="badge badge--info">Estratégia @r.Strategy</span>
+                                </div>
+                                <div class="grid grid--2">
+                                    <div class="result-card result-card--neutral">
+                                        <div class="result-card__label">Poupança acumulada</div>
+                                        <div class="result-card__value">@Money(r.Projecao.PoupancaAcumulada)</div>
+                                        <div class="result-card__hint">ao fim de @sim.Meses meses</div>
+                                    </div>
+                                    <div class="result-card result-card--neutral">
+                                        <div class="result-card__label">Saldo médio mensal</div>
+                                        <div class="result-card__value">@Money(r.Projecao.SaldoMedioMensal)</div>
+                                        <div class="result-card__hint">rendimento menos despesas ajustadas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+            </div>
+        </div>
+
+        @* ── Panel: Responder ──────────────────────────────── *@
+        <div class="workspace-panel @(activeTab == "respond" ? "is-active" : "")" data-tab-panel="respond">
+
+            @if (!challenge.CanEditSubmission && !challenge.HasSubmission)
+            {
+                <div class="alert alert--danger" style="margin-bottom:1.25rem">
+                    <span>!</span>
+                    <div>O prazo de entrega terminou e já não é possível submeter uma resposta.</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(challenge.Feedback))
+            {
+                <div class="alert alert--info" style="margin-bottom:1.25rem">
+                    <span>ℹ</span>
+                    <div><strong>Feedback do professor:</strong><br />@challenge.Feedback</div>
+                </div>
+            }
+
+            <form asp-controller="Student" asp-action="ChallengeWorkspaceSubmit" asp-route-id="@challenge.Id" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+                <div class="form-group">
+                    <label class="form-label form-label--required">Resposta / entrega</label>
+                    <textarea name="ResponseText"
+                              class="form-textarea"
+                              rows="16"
+                              placeholder="Explica o teu raciocínio, os cálculos que fizeste e a decisão que tomaste."
+                              @(!challenge.CanEditSubmission ? "readonly" : "")>@challenge.ResponseText</textarea>
+                    <span class="form-hint">Descreve a solução com clareza suficiente para o professor acompanhar o teu raciocínio.</span>
+                </div>
+
+                @if (challenge.CanEditSubmission)
+                {
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn--primary btn--lg">
+                            @(challenge.HasSubmission ? "Guardar alterações" : "Submeter resposta")
+                        </button>
+                    </div>
+                }
+            </form>
+        </div>
+
+        @* ── Panel: Comparar estratégias ──────────────────── *@
+        @{
+            var cmp = Model.Comparison;
+        }
+        <div class="workspace-panel @(activeTab == "compare" ? "is-active" : "")" data-tab-panel="compare">
+
+            @if (cmp?.ErrorMessage is not null)
+            {
+                <div class="alert alert--danger" style="margin-bottom:1.25rem">
+                    <span>⚠</span>
+                    <div>@cmp.ErrorMessage</div>
+                </div>
+            }
+
+            @* Form de parâmetros (sem seletor de estratégia) *@
+            <div class="workspace-sim-layout" style="margin-bottom:1.5rem">
+                <div class="card" style="align-self:start">
+                    <div class="card__header">
+                        <div>
+                            <h3 class="card__title">Parâmetros</h3>
+                            <p class="card__subtitle">Corre as 3 estratégias de uma vez</p>
+                        </div>
+                    </div>
+                    <form asp-controller="Student" asp-action="ChallengeWorkspaceCompare" asp-route-id="@challenge.Id" method="post" novalidate>
+
+                        <div class="form-group">
+                            <label class="form-label">Cenário</label>
+                            <select class="form-select" name="ScenarioId" id="cmp-scenario-id">
+                                <option value="">— Sem cenário associado —</option>
+                                @foreach (var sc in sim.Scenarios)
+                                {
+                                    <option value="@sc.Id" selected="@(cmp?.ScenarioId == sc.Id ? "selected" : null)">@sc.Name</option>
+                                }
+                            </select>
+                            <span class="form-hint">Ao selecionar um cenário, os campos são preenchidos automaticamente a partir dos teus lançamentos.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Rendimento mensal (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0.01" name="RendimentoMensal" id="cmp-rendimento-mensal" value="@(cmp?.RendimentoMensal)" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Despesas mensais (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="DespesasMensais" id="cmp-despesas-mensais" value="@(cmp?.DespesasMensais)" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Encargos fixos (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="EncargosFixos" id="cmp-encargos-fixos" value="@(cmp?.EncargosFixos)" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Capital para poupança (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="CapitalPoupanca" id="cmp-capital-poupanca" value="@(cmp?.CapitalPoupanca)" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Empréstimo (€)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="Emprestimo" id="cmp-emprestimo" value="@(cmp?.Emprestimo)" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Período (meses)</label>
+                            <input class="form-control" type="number" min="3" max="120" name="Meses" value="@(cmp?.Meses > 0 ? cmp.Meses : 24)" />
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn--primary btn--block">Comparar as 3 estratégias</button>
+                        </div>
+                    </form>
+                </div>
+
+                @* Tabela de comparação *@
+                <div>
+                    @if (cmp is null || !cmp.HasResults)
+                    {
+                        <div class="card">
+                            <div class="chart-placeholder">
+                                <div class="chart-placeholder__label">Preenche os parâmetros para comparar as estratégias lado a lado.</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th class="comparison-table__metric">Métrica</th>
+                                        <th class="comparison-table__col comparison-table__col--conservative">🛡️ Conservadora</th>
+                                        <th class="comparison-table__col comparison-table__col--moderate">⚖️ Moderada</th>
+                                        <th class="comparison-table__col comparison-table__col--aggressive">🚀 Agressiva</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @* Taxa de esforço *@
+                                    <tr>
+                                        <td class="comparison-table__label">Taxa de esforço</td>
+                                        <td>@(cmp.Conservative?.TaxaEsforco is not null ? $"{cmp.Conservative.TaxaEsforco.TaxaEsforco.ToString("0.##", pt)}%" : "—")</td>
+                                        <td>@(cmp.Moderate?.TaxaEsforco is not null ? $"{cmp.Moderate.TaxaEsforco.TaxaEsforco.ToString("0.##", pt)}%" : "—")</td>
+                                        <td>@(cmp.Aggressive?.TaxaEsforco is not null ? $"{cmp.Aggressive.TaxaEsforco.TaxaEsforco.ToString("0.##", pt)}%" : "—")</td>
+                                    </tr>
+                                    <tr class="comparison-table__subrow">
+                                        <td class="comparison-table__label">Classificação</td>
+                                        <td>@(cmp.Conservative?.TaxaEsforco?.Classificacao ?? "—")</td>
+                                        <td>@(cmp.Moderate?.TaxaEsforco?.Classificacao ?? "—")</td>
+                                        <td>@(cmp.Aggressive?.TaxaEsforco?.Classificacao ?? "—")</td>
+                                    </tr>
+                                    @* Capitalização *@
+                                    <tr class="comparison-table__section">
+                                        <td class="comparison-table__label">Valor final acumulado</td>
+                                        <td>@(cmp.Conservative?.Capitalizacao is not null ? Money(cmp.Conservative.Capitalizacao.MontanteFinal) : "—")</td>
+                                        <td>@(cmp.Moderate?.Capitalizacao is not null ? Money(cmp.Moderate.Capitalizacao.MontanteFinal) : "—")</td>
+                                        <td>@(cmp.Aggressive?.Capitalizacao is not null ? Money(cmp.Aggressive.Capitalizacao.MontanteFinal) : "—")</td>
+                                    </tr>
+                                    <tr class="comparison-table__subrow">
+                                        <td class="comparison-table__label">Juros gerados</td>
+                                        <td>@(cmp.Conservative?.Capitalizacao is not null ? Money(cmp.Conservative.Capitalizacao.JurosGerados) : "—")</td>
+                                        <td>@(cmp.Moderate?.Capitalizacao is not null ? Money(cmp.Moderate.Capitalizacao.JurosGerados) : "—")</td>
+                                        <td>@(cmp.Aggressive?.Capitalizacao is not null ? Money(cmp.Aggressive.Capitalizacao.JurosGerados) : "—")</td>
+                                    </tr>
+                                    @* Projeção *@
+                                    <tr class="comparison-table__section">
+                                        <td class="comparison-table__label">Poupança acumulada</td>
+                                        <td>@(cmp.Conservative?.Projecao is not null ? Money(cmp.Conservative.Projecao.PoupancaAcumulada) : "—")</td>
+                                        <td>@(cmp.Moderate?.Projecao is not null ? Money(cmp.Moderate.Projecao.PoupancaAcumulada) : "—")</td>
+                                        <td>@(cmp.Aggressive?.Projecao is not null ? Money(cmp.Aggressive.Projecao.PoupancaAcumulada) : "—")</td>
+                                    </tr>
+                                    <tr class="comparison-table__subrow">
+                                        <td class="comparison-table__label">Saldo médio mensal</td>
+                                        <td>@(cmp.Conservative?.Projecao is not null ? Money(cmp.Conservative.Projecao.SaldoMedioMensal) : "—")</td>
+                                        <td>@(cmp.Moderate?.Projecao is not null ? Money(cmp.Moderate.Projecao.SaldoMedioMensal) : "—")</td>
+                                        <td>@(cmp.Aggressive?.Projecao is not null ? Money(cmp.Aggressive.Projecao.SaldoMedioMensal) : "—")</td>
+                                    </tr>
+                                    <tr class="comparison-table__subrow">
+                                        <td class="comparison-table__label">Break-even</td>
+                                        <td>@(cmp.Conservative?.Projecao?.BreakEvenMes is int b1 ? $"{b1} meses" : "Não atingido")</td>
+                                        <td>@(cmp.Moderate?.Projecao?.BreakEvenMes is int b2 ? $"{b2} meses" : "Não atingido")</td>
+                                        <td>@(cmp.Aggressive?.Projecao?.BreakEvenMes is int b3 ? $"{b3} meses" : "Não atingido")</td>
+                                    </tr>
+                                    @* Crédito *@
+                                    @if (cmp.Conservative?.Credito is not null || cmp.Moderate?.Credito is not null || cmp.Aggressive?.Credito is not null)
+                                    {
+                                        <tr class="comparison-table__section">
+                                            <td class="comparison-table__label">Custo total do crédito</td>
+                                            <td>@(cmp.Conservative?.Credito is not null ? Money(cmp.Conservative.Credito.CustoTotal) : "—")</td>
+                                            <td>@(cmp.Moderate?.Credito is not null ? Money(cmp.Moderate.Credito.CustoTotal) : "—")</td>
+                                            <td>@(cmp.Aggressive?.Credito is not null ? Money(cmp.Aggressive.Credito.CustoTotal) : "—")</td>
+                                        </tr>
+                                        <tr class="comparison-table__subrow">
+                                            <td class="comparison-table__label">Prestação mensal</td>
+                                            <td>@(cmp.Conservative?.Credito is not null ? Money(cmp.Conservative.Credito.PrestacaoMensal) : "—")</td>
+                                            <td>@(cmp.Moderate?.Credito is not null ? Money(cmp.Moderate.Credito.PrestacaoMensal) : "—")</td>
+                                            <td>@(cmp.Aggressive?.Credito is not null ? Money(cmp.Aggressive.Credito.PrestacaoMensal) : "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        #ws-desc-rendered h1, #ws-desc-rendered h2, #ws-desc-rendered h3 { margin: 1rem 0 0.5rem; font-weight: 600; }
+        #ws-desc-rendered h2 { font-size: 1.1rem; }
+        #ws-desc-rendered h3 { font-size: 1rem; }
+        #ws-desc-rendered ul, #ws-desc-rendered ol { padding-left: 1.4rem; margin: 0.5rem 0; }
+        #ws-desc-rendered li { margin-bottom: 0.2rem; }
+        #ws-desc-rendered strong { color: var(--color-gray-900); }
+        #ws-desc-rendered hr { border: none; border-top: 1px solid var(--border-color); margin: 1rem 0; }
+        #ws-desc-rendered p { margin: 0.5rem 0; }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+    (function () {
+        // Render markdown description
+        var src    = document.getElementById('ws-desc-src');
+        var target = document.getElementById('ws-desc-rendered');
+        if (src && target) {
+            if (typeof marked !== 'undefined') {
+                target.innerHTML = marked.parse(src.textContent || '');
+            } else {
+                target.textContent = src.textContent;
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('[data-tab-btn]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.dataset.tabBtn;
+                document.querySelectorAll('[data-tab-btn]').forEach(function (b) {
+                    b.classList.toggle('workspace-tab-btn--active', b.dataset.tabBtn === tab);
+                });
+                document.querySelectorAll('[data-tab-panel]').forEach(function (p) {
+                    p.classList.toggle('is-active', p.dataset.tabPanel === tab);
+                });
+            });
+        });
+
+        // Banner collapse
+        var bannerToggle = document.querySelector('[data-banner-toggle]');
+        var bannerBody   = document.querySelector('[data-banner-body]');
+        var toggleBtn    = document.querySelector('[data-banner-toggle-btn]');
+        if (bannerToggle && bannerBody) {
+            bannerToggle.addEventListener('click', function () {
+                var collapsed = bannerBody.classList.toggle('is-collapsed');
+                if (toggleBtn) {
+                    toggleBtn.querySelector('span').textContent = collapsed ? 'Abrir' : 'Fechar';
+                    toggleBtn.querySelector('svg').style.transform = collapsed ? 'rotate(180deg)' : '';
+                }
+            });
+        }
+
+        // Auto-fill financials from scenario
+        function setupScenarioAutofill(selectId, prefix) {
+            var sel = document.getElementById(selectId);
+            if (!sel) return;
+            sel.addEventListener('change', async function () {
+                var id = sel.value;
+                if (!id) return;
+                try {
+                    var resp = await fetch('/Student/ScenarioQuickData/' + id);
+                    if (!resp.ok) return;
+                    var d = await resp.json();
+                    var fill = function (fieldId, val) {
+                        var el = document.getElementById(fieldId);
+                        if (el) el.value = parseFloat(val).toFixed(2);
+                    };
+                    fill(prefix + '-rendimento-mensal', d.rendimentoMensal);
+                    fill(prefix + '-despesas-mensais',  d.despesasMensais);
+                    fill(prefix + '-encargos-fixos',    d.encargosFixos);
+                    fill(prefix + '-capital-poupanca',  d.capitalPoupanca);
+                } catch (e) {}
+            });
+        }
+        setupScenarioAutofill('sim-scenario-id', 'sim');
+        setupScenarioAutofill('cmp-scenario-id', 'cmp');
+    })();
+    </script>
+}

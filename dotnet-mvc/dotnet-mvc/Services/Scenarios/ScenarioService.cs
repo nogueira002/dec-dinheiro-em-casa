@@ -12,6 +12,7 @@ public interface IScenarioService
     Task<ScenarioEditorViewModel?> GetScenarioForEditAsync(int userId, int scenarioId, CancellationToken cancellationToken = default);
     Task<int> CreateScenarioAsync(int userId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default);
     Task<bool> UpdateScenarioAsync(int userId, int scenarioId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default);
+    Task<ScenarioQuickDataDto?> GetScenarioQuickDataAsync(int userId, int scenarioId, CancellationToken cancellationToken = default);
 }
 
 public sealed class ScenarioService : IScenarioService
@@ -115,5 +116,39 @@ public sealed class ScenarioService : IScenarioService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<ScenarioQuickDataDto?> GetScenarioQuickDataAsync(int userId, int scenarioId, CancellationToken cancellationToken = default)
+    {
+        var scenario = await _dbContext.Scenarios
+            .AsNoTracking()
+            .Include(s => s.Entries)
+            .Include(s => s.Goals)
+            .Where(s => s.Id == scenarioId && s.OwnerId == userId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (scenario is null) return null;
+
+        static decimal MonthlyAvg(IEnumerable<dotnet_mvc.Models.FinancialEntry> entries)
+        {
+            var groups = entries
+                .GroupBy(e => new { e.Month, e.Year })
+                .Select(g => g.Sum(e => e.Amount))
+                .ToList();
+            return groups.Count > 0 ? groups.Average() : 0m;
+        }
+
+        // Capital poupado = soma do que já foi reforçado nos objetivos;
+        // se não há objetivos, usa o saldo inicial do cenário como fallback.
+        var totalSaved = scenario.Goals.Sum(g => g.SavedAmount);
+        var capitalPoupanca = totalSaved > 0 ? totalSaved : scenario.InitialBalance;
+
+        return new ScenarioQuickDataDto
+        {
+            RendimentoMensal = MonthlyAvg(scenario.Entries.Where(e => e.EntryType == "Income")),
+            DespesasMensais  = MonthlyAvg(scenario.Entries.Where(e => e.EntryType == "Expense" && !e.IsRecurring)),
+            EncargosFixos    = MonthlyAvg(scenario.Entries.Where(e => e.EntryType == "Expense" && e.IsRecurring)),
+            CapitalPoupanca  = capitalPoupanca
+        };
     }
 }

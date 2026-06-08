@@ -1,0 +1,315 @@
+@using System.Globalization
+@model dotnet_mvc.ViewModels.Student.CalculatorViewModel
+
+@{
+    ViewData["Title"]      = "Calculadora";
+    ViewData["PageTitle"]  = "Calculadora";
+    ViewData["Role"]       = "Student";
+    ViewData["ActiveMenu"] = "calculator";
+    Layout = "_DashboardLayout";
+
+    var pt = CultureInfo.GetCultureInfo("pt-PT");
+    string Money(decimal v)   => string.Format(pt, "{0:N2} €", v);
+    string Pct(decimal v)     => string.Format(pt, "{0:N2}%", v);
+    var activeTab = Model.ActiveTab;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Calculadora financeira</h1>
+        <p class="page-header__subtitle">Ferramentas de cálculo para uso pessoal — independentes dos desafios.</p>
+    </div>
+</div>
+
+<div class="workspace-tabs" role="tablist" style="margin-bottom:0">
+    <button type="button" class="workspace-tab-btn @(activeTab == "esforco" ? "workspace-tab-btn--active" : "")" data-tab-btn="esforco" role="tab">
+        💪 Taxa de esforço
+    </button>
+    <button type="button" class="workspace-tab-btn @(activeTab == "capitalizacao" ? "workspace-tab-btn--active" : "")" data-tab-btn="capitalizacao" role="tab">
+        📈 Capitalização
+    </button>
+    <button type="button" class="workspace-tab-btn @(activeTab == "credito" ? "workspace-tab-btn--active" : "")" data-tab-btn="credito" role="tab">
+        🏦 Crédito
+    </button>
+    <button type="button" class="workspace-tab-btn @(activeTab == "projecao" ? "workspace-tab-btn--active" : "")" data-tab-btn="projecao" role="tab">
+        💰 Projeção de poupança
+    </button>
+</div>
+
+@* ── Taxa de esforço ─────────────────────────────────────────────────────── *@
+<div class="workspace-panel @(activeTab == "esforco" ? "is-active" : "")" data-tab-panel="esforco">
+    <div class="workspace-sim-layout" style="margin-top:1rem">
+        <div class="card" style="align-self:start">
+            <div class="card__header">
+                <div>
+                    <h3 class="card__title">Taxa de esforço</h3>
+                    <p class="card__subtitle">Percentagem do rendimento comprometida com encargos fixos</p>
+                </div>
+            </div>
+            <form asp-controller="Student" asp-action="CalculatorEsforco" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:1rem"></div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Encargos fixos mensais (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0.01" name="Esforco.EncargosFixos" value="@(Model.Esforco.EncargosFixos > 0 ? Model.Esforco.EncargosFixos.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 800" />
+                    <span class="form-hint">Renda, prestações, seguros obrigatórios, etc.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Rendimento líquido mensal (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0.01" name="Esforco.RendimentoLiquido" value="@(Model.Esforco.RendimentoLiquido > 0 ? Model.Esforco.RendimentoLiquido.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 1500" />
+                    <span class="form-hint">Salário líquido + outros rendimentos regulares.</span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--block">Calcular</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            @if (Model.Esforco.Error is not null)
+            {
+                <div class="alert alert--danger"><span>⚠</span><div>@Model.Esforco.Error</div></div>
+            }
+            else if (Model.Esforco.Result is { } er)
+            {
+                var color = er.TaxaEsforco <= 35 ? "var(--color-success)" : er.TaxaEsforco <= 50 ? "var(--color-warning)" : "var(--color-danger)";
+                <div class="card">
+                    <div class="card__header"><h3 class="card__title">Resultado</h3></div>
+                    <div class="grid grid--2">
+                        <div class="result-card">
+                            <div class="result-card__label">Taxa de esforço</div>
+                            <div class="result-card__value" style="color:@color">@Pct(er.TaxaEsforco)</div>
+                        </div>
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Classificação</div>
+                            <div class="result-card__value" style="font-size:1.1rem">@er.Classificacao</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:1rem; padding:0.75rem; background:var(--color-gray-50); border-radius:0.5rem; font-size:0.85rem; color:var(--color-gray-600)">
+                        <strong>Referência:</strong> até 35% = saudável · 35–50% = atenção · &gt;50% = risco
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card"><div class="chart-placeholder"><div class="chart-placeholder__label">Preenche os valores e calcula para ver o resultado.</div></div></div>
+            }
+        </div>
+    </div>
+</div>
+
+@* ── Capitalização composta ──────────────────────────────────────────────── *@
+<div class="workspace-panel @(activeTab == "capitalizacao" ? "is-active" : "")" data-tab-panel="capitalizacao">
+    <div class="workspace-sim-layout" style="margin-top:1rem">
+        <div class="card" style="align-self:start">
+            <div class="card__header">
+                <div>
+                    <h3 class="card__title">Capitalização composta</h3>
+                    <p class="card__subtitle">Quanto cresce um capital ao longo do tempo</p>
+                </div>
+            </div>
+            <form asp-controller="Student" asp-action="CalculatorCapitalizacao" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:1rem"></div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Capital inicial (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0.01" name="Capitalizacao.Capital" value="@(Model.Capitalizacao.Capital > 0 ? Model.Capitalizacao.Capital.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 5000" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">TAN — Taxa Anual Nominal (%)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" max="100" name="Capitalizacao.TanPercent" value="@Model.Capitalizacao.TanPercent.ToString("F2", CultureInfo.InvariantCulture)" />
+                    <span class="form-hint">Introduz em percentagem — ex: <strong>3.5</strong> para 3,5% ao ano.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Período (meses)</label>
+                    <input class="form-control" type="number" min="1" max="360" name="Capitalizacao.Meses" value="@Model.Capitalizacao.Meses" />
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--block">Calcular</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            @if (Model.Capitalizacao.Error is not null)
+            {
+                <div class="alert alert--danger"><span>⚠</span><div>@Model.Capitalizacao.Error</div></div>
+            }
+            else if (Model.Capitalizacao.Result is { } cr)
+            {
+                <div class="card">
+                    <div class="card__header"><h3 class="card__title">Resultado</h3></div>
+                    <div class="grid grid--2">
+                        <div class="result-card">
+                            <div class="result-card__label">Montante final</div>
+                            <div class="result-card__value">@Money(cr.MontanteFinal)</div>
+                            <div class="result-card__hint">ao fim de @Model.Capitalizacao.Meses meses</div>
+                        </div>
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Juros gerados</div>
+                            <div class="result-card__value" style="color:var(--color-success)">+@Money(cr.JurosGerados)</div>
+                            <div class="result-card__hint">sobre @Money(Model.Capitalizacao.Capital) iniciais</div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card"><div class="chart-placeholder"><div class="chart-placeholder__label">Preenche os valores e calcula para ver o resultado.</div></div></div>
+            }
+        </div>
+    </div>
+</div>
+
+@* ── Simulação de crédito ────────────────────────────────────────────────── *@
+<div class="workspace-panel @(activeTab == "credito" ? "is-active" : "")" data-tab-panel="credito">
+    <div class="workspace-sim-layout" style="margin-top:1rem">
+        <div class="card" style="align-self:start">
+            <div class="card__header">
+                <div>
+                    <h3 class="card__title">Simulação de crédito</h3>
+                    <p class="card__subtitle">Prestação mensal e custo total de um empréstimo</p>
+                </div>
+            </div>
+            <form asp-controller="Student" asp-action="CalculatorCredito" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:1rem"></div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Montante do empréstimo (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0.01" name="Credito.Emprestimo" value="@(Model.Credito.Emprestimo > 0 ? Model.Credito.Emprestimo.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 15000" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">TAN — Taxa Anual Nominal (%)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" max="100" name="Credito.TanPercent" value="@Model.Credito.TanPercent.ToString("F2", CultureInfo.InvariantCulture)" />
+                    <span class="form-hint">Introduz em percentagem — ex: <strong>4.5</strong> para 4,5% ao ano.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Prazo (meses)</label>
+                    <input class="form-control" type="number" min="1" max="360" name="Credito.Meses" value="@Model.Credito.Meses" />
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--block">Calcular</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            @if (Model.Credito.Error is not null)
+            {
+                <div class="alert alert--danger"><span>⚠</span><div>@Model.Credito.Error</div></div>
+            }
+            else if (Model.Credito.Result is { } ccr)
+            {
+                <div class="card">
+                    <div class="card__header"><h3 class="card__title">Resultado</h3></div>
+                    <div class="grid grid--2">
+                        <div class="result-card">
+                            <div class="result-card__label">Prestação mensal</div>
+                            <div class="result-card__value">@Money(ccr.PrestacaoMensal)</div>
+                            <div class="result-card__hint">durante @Model.Credito.Meses meses</div>
+                        </div>
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Custo total</div>
+                            <div class="result-card__value">@Money(ccr.CustoTotal)</div>
+                            <div class="result-card__hint">capital + juros</div>
+                        </div>
+                        <div class="result-card result-card--neutral" style="grid-column:1/-1">
+                            <div class="result-card__label">Juros totais pagos</div>
+                            <div class="result-card__value" style="color:var(--color-danger)">@Money(ccr.JurosTotais)</div>
+                            <div class="result-card__hint">custo real do financiamento</div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card"><div class="chart-placeholder"><div class="chart-placeholder__label">Preenche os valores e calcula para ver o resultado.</div></div></div>
+            }
+        </div>
+    </div>
+</div>
+
+@* ── Projeção de poupança ────────────────────────────────────────────────── *@
+<div class="workspace-panel @(activeTab == "projecao" ? "is-active" : "")" data-tab-panel="projecao">
+    <div class="workspace-sim-layout" style="margin-top:1rem">
+        <div class="card" style="align-self:start">
+            <div class="card__header">
+                <div>
+                    <h3 class="card__title">Projeção de poupança</h3>
+                    <p class="card__subtitle">Evolução do saldo mensal com efeito da inflação</p>
+                </div>
+            </div>
+            <form asp-controller="Student" asp-action="CalculatorProjecao" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:1rem"></div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Rendimento mensal líquido (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0.01" name="Projecao.RendimentoMensal" value="@(Model.Projecao.RendimentoMensal > 0 ? Model.Projecao.RendimentoMensal.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 1500" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Despesas mensais (€)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" name="Projecao.DespesasMensais" value="@(Model.Projecao.DespesasMensais > 0 ? Model.Projecao.DespesasMensais.ToString("F2", CultureInfo.InvariantCulture) : "")" placeholder="ex: 1200" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Taxa de inflação anual (%)</label>
+                    <input class="form-control" type="number" step="0.01" min="0" max="100" name="Projecao.TaxaInflacaoPercent" value="@Model.Projecao.TaxaInflacaoPercent.ToString("F2", CultureInfo.InvariantCulture)" />
+                    <span class="form-hint">Inflação prevista — ex: <strong>2.5</strong> para 2,5% ao ano.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label--required">Período (meses)</label>
+                    <input class="form-control" type="number" min="1" max="360" name="Projecao.Meses" value="@Model.Projecao.Meses" />
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--block">Calcular</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            @if (Model.Projecao.Error is not null)
+            {
+                <div class="alert alert--danger"><span>⚠</span><div>@Model.Projecao.Error</div></div>
+            }
+            else if (Model.Projecao.Result is { } pr)
+            {
+                <div class="card">
+                    <div class="card__header"><h3 class="card__title">Resultado</h3></div>
+                    <div class="grid grid--2">
+                        <div class="result-card">
+                            <div class="result-card__label">Poupança acumulada</div>
+                            <div class="result-card__value">@Money(pr.PoupancaAcumulada)</div>
+                            <div class="result-card__hint">ao fim de @Model.Projecao.Meses meses</div>
+                        </div>
+                        <div class="result-card result-card--neutral">
+                            <div class="result-card__label">Saldo médio mensal</div>
+                            <div class="result-card__value">@Money(pr.SaldoMedioMensal)</div>
+                            <div class="result-card__hint">rendimento − despesas ajustadas</div>
+                        </div>
+                        <div class="result-card result-card--neutral" style="grid-column:1/-1">
+                            <div class="result-card__label">Break-even</div>
+                            <div class="result-card__value">
+                                @(pr.BreakEvenMes is int be ? $"Mês {be}" : "Não atingido")
+                            </div>
+                            <div class="result-card__hint">mês em que a poupança acumulada fica positiva</div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card"><div class="chart-placeholder"><div class="chart-placeholder__label">Preenche os valores e calcula para ver o resultado.</div></div></div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+    (function () {
+        document.querySelectorAll('[data-tab-btn]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.dataset.tabBtn;
+                document.querySelectorAll('[data-tab-btn]').forEach(function (b) {
+                    b.classList.toggle('workspace-tab-btn--active', b.dataset.tabBtn === tab);
+                });
+                document.querySelectorAll('[data-tab-panel]').forEach(function (p) {
+                    p.classList.toggle('is-active', p.dataset.tabPanel === tab);
+                });
+            });
+        });
+    })();
+    </script>
+}

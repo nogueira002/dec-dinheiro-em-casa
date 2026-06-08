@@ -2,6 +2,36 @@ using System.Text.Json.Serialization;
 
 namespace dotnet_mvc.Services.Finance;
 
+// ── Calculadoras individuais ──────────────────────────────────────────────────
+
+public sealed class CalcEsforcoRequest
+{
+    [JsonPropertyName("encargos_fixos")]   public decimal EncargosFixos    { get; set; }
+    [JsonPropertyName("rendimento_liquido")] public decimal RendimentoLiquido { get; set; }
+}
+
+public sealed class CalcCapitalizacaoRequest
+{
+    [JsonPropertyName("capital")] public decimal Capital { get; set; }
+    [JsonPropertyName("tan")]     public decimal Tan     { get; set; }
+    [JsonPropertyName("meses")]   public int     Meses   { get; set; }
+}
+
+public sealed class CalcCreditoRequest
+{
+    [JsonPropertyName("emprestimo")] public decimal Emprestimo { get; set; }
+    [JsonPropertyName("tan")]        public decimal Tan        { get; set; }
+    [JsonPropertyName("meses")]      public int     Meses      { get; set; }
+}
+
+public sealed class CalcProjecaoRequest
+{
+    [JsonPropertyName("rendimento_mensal")] public decimal RendimentoMensal { get; set; }
+    [JsonPropertyName("despesas_mensais")]  public decimal DespesasMensais  { get; set; }
+    [JsonPropertyName("taxa_inflacao")]     public decimal TaxaInflacao     { get; set; }
+    [JsonPropertyName("meses")]            public int     Meses            { get; set; }
+}
+
 // Pedido enviado para POST /api/simulate/ na API Django.
 // Os nomes em snake_case correspondem ao SimulateSerializer do microserviço.
 public sealed class SimulationRequest

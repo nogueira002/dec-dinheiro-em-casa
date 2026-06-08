@@ -223,6 +223,22 @@ public class StudentController : AuthenticatedControllerBase
     }
 
     [HttpPost]
+    public async Task<IActionResult> UpdateEntry(int scenarioId, int entryId, CreateEntryViewModel Form, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (!userId.HasValue) return Forbid();
+
+        if (ModelState.IsValid)
+        {
+            await _entryService.UpdateEntryAsync(userId.Value, entryId, Form, cancellationToken);
+            TempData["StatusType"]    = "success";
+            TempData["StatusMessage"] = "Lançamento atualizado.";
+        }
+
+        return RedirectToAction(nameof(Entries), new { scenarioId });
+    }
+
+    [HttpPost]
     public async Task<IActionResult> DeleteEntry(int scenarioId, int entryId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -312,6 +328,80 @@ public class StudentController : AuthenticatedControllerBase
     }
 
     // ===== Simulações =====
+
+    // ===== Calculadora =====
+
+    public IActionResult Calculator()
+    {
+        ApplyDashboardContext("Calculadora", "calculator", UserRoles.Student);
+        return View(new CalculatorViewModel());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CalculatorEsforco(EsforcoCalcVM Esforco, CancellationToken ct)
+    {
+        ApplyDashboardContext("Calculadora", "calculator", UserRoles.Student);
+        var vm = new CalculatorViewModel { ActiveTab = "esforco", Esforco = Esforco };
+        if (ModelState.IsValid)
+        {
+            var (result, error) = await _financeApiClient.CalcTaxaEsforcoAsync(
+                new CalcEsforcoRequest { EncargosFixos = Esforco.EncargosFixos, RendimentoLiquido = Esforco.RendimentoLiquido }, ct);
+            Esforco.Result = result;
+            Esforco.Error  = error;
+        }
+        return View("Calculator", vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CalculatorCapitalizacao(CapitalizacaoCalcVM Capitalizacao, CancellationToken ct)
+    {
+        ApplyDashboardContext("Calculadora", "calculator", UserRoles.Student);
+        var vm = new CalculatorViewModel { ActiveTab = "capitalizacao", Capitalizacao = Capitalizacao };
+        if (ModelState.IsValid)
+        {
+            var (result, error) = await _financeApiClient.CalcCapitalizacaoAsync(
+                new CalcCapitalizacaoRequest { Capital = Capitalizacao.Capital, Tan = Capitalizacao.TanPercent / 100m, Meses = Capitalizacao.Meses }, ct);
+            Capitalizacao.Result = result;
+            Capitalizacao.Error  = error;
+        }
+        return View("Calculator", vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CalculatorCredito(CreditoCalcVM Credito, CancellationToken ct)
+    {
+        ApplyDashboardContext("Calculadora", "calculator", UserRoles.Student);
+        var vm = new CalculatorViewModel { ActiveTab = "credito", Credito = Credito };
+        if (ModelState.IsValid)
+        {
+            var (result, error) = await _financeApiClient.CalcCreditoAsync(
+                new CalcCreditoRequest { Emprestimo = Credito.Emprestimo, Tan = Credito.TanPercent / 100m, Meses = Credito.Meses }, ct);
+            Credito.Result = result;
+            Credito.Error  = error;
+        }
+        return View("Calculator", vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CalculatorProjecao(ProjecaoCalcVM Projecao, CancellationToken ct)
+    {
+        ApplyDashboardContext("Calculadora", "calculator", UserRoles.Student);
+        var vm = new CalculatorViewModel { ActiveTab = "projecao", Projecao = Projecao };
+        if (ModelState.IsValid)
+        {
+            var (result, error) = await _financeApiClient.CalcProjecaoAsync(
+                new CalcProjecaoRequest
+                {
+                    RendimentoMensal = Projecao.RendimentoMensal,
+                    DespesasMensais  = Projecao.DespesasMensais,
+                    TaxaInflacao     = Projecao.TaxaInflacaoPercent / 100m,
+                    Meses            = Projecao.Meses
+                }, ct);
+            Projecao.Result = result;
+            Projecao.Error  = error;
+        }
+        return View("Calculator", vm);
+    }
 
     public async Task<IActionResult> Simulations(CancellationToken cancellationToken)
     {
@@ -460,6 +550,209 @@ public class StudentController : AuthenticatedControllerBase
             ModelState.AddModelError(string.Empty, ex.Message);
             var invalidStateModel = await LoadChallengeDetailsViewModelAsync(studentId.Value, id, model.ResponseText, cancellationToken);
             return invalidStateModel is null ? NotFound() : View(invalidStateModel);
+        }
+    }
+
+    // ===== Workspace de desafio =====
+
+    public async Task<IActionResult> ChallengeWorkspace(int id, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Workspace", "challenges", UserRoles.Student);
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue) return Forbid();
+
+        var challenge = await _academicManagementService.GetStudentChallengeDetailsAsync(studentId.Value, id, cancellationToken);
+        if (challenge is null) return NotFound();
+
+        var model = new ChallengeWorkspaceViewModel
+        {
+            Challenge = challenge,
+            Simulation = new SimulationViewModel
+            {
+                Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken),
+                History   = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken)
+            }
+        };
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ScenarioQuickData(int id, CancellationToken cancellationToken)
+    {
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue) return Forbid();
+
+        var data = await _scenarioService.GetScenarioQuickDataAsync(studentId.Value, id, cancellationToken);
+        if (data is null) return NotFound();
+
+        return Json(new
+        {
+            rendimentoMensal = data.RendimentoMensal,
+            despesasMensais  = data.DespesasMensais,
+            encargosFixos    = data.EncargosFixos,
+            capitalPoupanca  = data.CapitalPoupanca
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChallengeWorkspaceSimulate(int id, SimulationViewModel sim, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Workspace", "challenges", UserRoles.Student);
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue) return Forbid();
+
+        var challenge = await _academicManagementService.GetStudentChallengeDetailsAsync(studentId.Value, id, cancellationToken);
+        if (challenge is null) return NotFound();
+
+        sim.Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken);
+        sim.History   = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken);
+
+        var model = new ChallengeWorkspaceViewModel
+        {
+            Challenge  = challenge,
+            Simulation = sim,
+            ActiveTab  = "simulate"
+        };
+
+        if (!ModelState.IsValid)
+            return View("ChallengeWorkspace", model);
+
+        var outcome = await _financeApiClient.SimulateAsync(new SimulationRequest
+        {
+            Strategy         = sim.Strategy,
+            ScenarioId       = sim.ScenarioId ?? 0,
+            RendimentoMensal = sim.RendimentoMensal,
+            DespesasMensais  = sim.DespesasMensais,
+            EncargosFixos    = sim.EncargosFixos,
+            CapitalPoupanca  = sim.CapitalPoupanca,
+            Emprestimo       = sim.Emprestimo,
+            Meses            = sim.Meses
+        }, cancellationToken);
+
+        if (outcome.Success && outcome.Result is not null)
+        {
+            model.Simulation.Result = outcome.Result;
+            await _simulationHistoryService.SaveAsync(studentId.Value, new SimulationRequest
+            {
+                Strategy         = sim.Strategy,
+                ScenarioId       = sim.ScenarioId ?? 0,
+                RendimentoMensal = sim.RendimentoMensal,
+                DespesasMensais  = sim.DespesasMensais,
+                EncargosFixos    = sim.EncargosFixos,
+                CapitalPoupanca  = sim.CapitalPoupanca,
+                Emprestimo       = sim.Emprestimo,
+                Meses            = sim.Meses
+            }, outcome.Result, cancellationToken);
+            model.Simulation.History = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken);
+        }
+        else
+        {
+            model.Simulation.ErrorMessage = outcome.ErrorMessage;
+        }
+
+        return View("ChallengeWorkspace", model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChallengeWorkspaceCompare(int id, StrategyComparisonViewModel cmp, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Workspace", "challenges", UserRoles.Student);
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue) return Forbid();
+
+        var challenge = await _academicManagementService.GetStudentChallengeDetailsAsync(studentId.Value, id, cancellationToken);
+        if (challenge is null) return NotFound();
+
+        var scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken);
+        cmp.Scenarios = scenarios;
+
+        SimulationRequest BuildRequest(string strategy) => new()
+        {
+            Strategy         = strategy,
+            ScenarioId       = cmp.ScenarioId ?? 0,
+            RendimentoMensal = cmp.RendimentoMensal,
+            DespesasMensais  = cmp.DespesasMensais,
+            EncargosFixos    = cmp.EncargosFixos,
+            CapitalPoupanca  = cmp.CapitalPoupanca,
+            Emprestimo       = cmp.Emprestimo,
+            Meses            = cmp.Meses
+        };
+
+        var results = await Task.WhenAll(
+            _financeApiClient.SimulateAsync(BuildRequest("conservative"), cancellationToken),
+            _financeApiClient.SimulateAsync(BuildRequest("moderate"),     cancellationToken),
+            _financeApiClient.SimulateAsync(BuildRequest("aggressive"),   cancellationToken)
+        );
+
+        if (results.All(r => !r.Success))
+        {
+            cmp.ErrorMessage = results[0].ErrorMessage ?? "Erro ao calcular a comparação.";
+        }
+        else
+        {
+            cmp.Conservative = results[0].Result;
+            cmp.Moderate     = results[1].Result;
+            cmp.Aggressive   = results[2].Result;
+        }
+
+        var model = new ChallengeWorkspaceViewModel
+        {
+            Challenge  = challenge,
+            Simulation = new SimulationViewModel
+            {
+                Scenarios = scenarios,
+                History   = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken)
+            },
+            Comparison = cmp,
+            ActiveTab  = "compare"
+        };
+        return View("ChallengeWorkspace", model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChallengeWorkspaceSubmit(int id, StudentChallengeDetailsViewModel challengeForm, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Workspace", "challenges", UserRoles.Student);
+
+        var studentId = User.GetUserId();
+        if (!studentId.HasValue) return Forbid();
+
+        async Task<IActionResult> ReturnWorkspace(string? responseText = null)
+        {
+            var ch = await _academicManagementService.GetStudentChallengeDetailsAsync(studentId.Value, id, cancellationToken);
+            if (ch is null) return NotFound();
+            if (responseText is not null) ch.ResponseText = responseText;
+            return View("ChallengeWorkspace", new ChallengeWorkspaceViewModel
+            {
+                Challenge  = ch,
+                Simulation = new SimulationViewModel
+                {
+                    Scenarios = await _scenarioService.GetUserScenariosAsync(studentId.Value, cancellationToken),
+                    History   = await _simulationHistoryService.GetUserHistoryAsync(studentId.Value, 8, cancellationToken)
+                },
+                ActiveTab = "respond"
+            });
+        }
+
+        if (!ModelState.IsValid)
+            return await ReturnWorkspace(challengeForm.ResponseText);
+
+        try
+        {
+            var saved = await _academicManagementService.SaveStudentChallengeSubmissionAsync(studentId.Value, id, challengeForm.ResponseText, cancellationToken);
+            if (!saved) return NotFound();
+
+            TempData["StatusType"]    = "success";
+            TempData["StatusMessage"] = "A tua resposta foi guardada com sucesso.";
+            return RedirectToAction(nameof(ChallengeWorkspace), new { id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return await ReturnWorkspace(challengeForm.ResponseText);
         }
     }
 

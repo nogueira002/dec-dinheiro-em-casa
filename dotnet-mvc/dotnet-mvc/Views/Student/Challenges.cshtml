@@ -98,14 +98,24 @@ else
                 </div>
 
                 <div class="card__footer">
-                    <a class="btn btn--outline btn--sm"
-                       asp-controller="Student"
-                       asp-action="ChallengeDetails"
-                       asp-route-id="@c.Id">
-                        @(c.HasSubmission
-                            ? (c.CanEditSubmission ? "Editar submissão" : "Ver submissão")
-                            : (c.CanEditSubmission ? "Responder" : "Ver desafio"))
-                    </a>
+                    @if (c.CanEditSubmission)
+                    {
+                        <a class="btn btn--primary btn--sm"
+                           asp-controller="Student"
+                           asp-action="ChallengeWorkspace"
+                           asp-route-id="@c.Id">
+                            @(c.HasSubmission ? "Continuar" : "Abrir workspace")
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="btn btn--outline btn--sm"
+                           asp-controller="Student"
+                           asp-action="ChallengeDetails"
+                           asp-route-id="@c.Id">
+                            @(c.HasSubmission ? "Ver submissão" : "Ver desafio")
+                        </a>
+                    }
                 </div>
             </article>
         }

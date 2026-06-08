@@ -16,8 +16,11 @@ public sealed record SimulationOutcome(SimulationResult? Result, string? ErrorMe
 
 public interface IFinanceApiClient
 {
-    // Pede uma simulação financeira à API Django (que invoca o motor Python).
     Task<SimulationOutcome> SimulateAsync(SimulationRequest request, CancellationToken cancellationToken = default);
+    Task<(TaxaEsforcoResult? Result, string? Error)>  CalcTaxaEsforcoAsync(CalcEsforcoRequest req, CancellationToken ct = default);
+    Task<(CapitalizacaoResult? Result, string? Error)> CalcCapitalizacaoAsync(CalcCapitalizacaoRequest req, CancellationToken ct = default);
+    Task<(CreditoResult? Result, string? Error)>      CalcCreditoAsync(CalcCreditoRequest req, CancellationToken ct = default);
+    Task<(ProjecaoResult? Result, string? Error)>     CalcProjecaoAsync(CalcProjecaoRequest req, CancellationToken ct = default);
 }
 
 public sealed class FinanceApiClient : IFinanceApiClient
@@ -69,6 +72,43 @@ public sealed class FinanceApiClient : IFinanceApiClient
         {
             _logger.LogError(ex, "Falha ao comunicar com a API de cálculo financeiro.");
             return SimulationOutcome.Fail(GenericError);
+        }
+    }
+
+    public Task<(TaxaEsforcoResult? Result, string? Error)> CalcTaxaEsforcoAsync(CalcEsforcoRequest req, CancellationToken ct = default)
+        => PostCalcAsync<CalcEsforcoRequest, TaxaEsforcoResult>("taxa-esforco/", req, ct);
+
+    public Task<(CapitalizacaoResult? Result, string? Error)> CalcCapitalizacaoAsync(CalcCapitalizacaoRequest req, CancellationToken ct = default)
+        => PostCalcAsync<CalcCapitalizacaoRequest, CapitalizacaoResult>("capitalizacao/", req, ct);
+
+    public Task<(CreditoResult? Result, string? Error)> CalcCreditoAsync(CalcCreditoRequest req, CancellationToken ct = default)
+        => PostCalcAsync<CalcCreditoRequest, CreditoResult>("simular-credito/", req, ct);
+
+    public Task<(ProjecaoResult? Result, string? Error)> CalcProjecaoAsync(CalcProjecaoRequest req, CancellationToken ct = default)
+        => PostCalcAsync<CalcProjecaoRequest, ProjecaoResult>("projecao-poupanca/", req, ct);
+
+    private async Task<(T? result, string? error)> PostCalcAsync<TReq, T>(string endpoint, TReq body, CancellationToken ct)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(body, SerializerOptions);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await _httpClient.PostAsync(endpoint, content, ct);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<T>(SerializerOptions, ct);
+                return (result, null);
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogWarning("API calculadora respondeu {Status} em {Endpoint} — {Body}", (int)response.StatusCode, endpoint, responseBody);
+            return (default, ExtractErrorMessage(responseBody));
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            _logger.LogError(ex, "Falha ao comunicar com a calculadora ({Endpoint}).", endpoint);
+            return (default, GenericError);
         }
     }
 
