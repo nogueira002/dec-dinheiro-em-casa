@@ -81,6 +81,7 @@ public sealed class StudentDashboardService : IStudentDashboardService
                 Name = x.Name,
                 Location = x.Location,
                 ProfileTypeLabel = x.ProfileType.GetDisplayName(),
+                InitialBalance = x.InitialBalance,
                 InitialBalanceDisplay = FormatCurrency(x.InitialBalance),
                 BalancePercentOfMax = maxBalance <= 0m ? 0m : Math.Round(x.InitialBalance * 100m / maxBalance, 1, MidpointRounding.AwayFromZero)
             })

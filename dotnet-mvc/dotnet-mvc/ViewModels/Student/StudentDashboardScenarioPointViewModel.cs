@@ -6,6 +6,7 @@ public class StudentDashboardScenarioPointViewModel
     public string Name { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string ProfileTypeLabel { get; set; } = string.Empty;
+    public decimal InitialBalance { get; set; }
     public string InitialBalanceDisplay { get; set; } = string.Empty;
     public decimal BalancePercentOfMax { get; set; }
 }

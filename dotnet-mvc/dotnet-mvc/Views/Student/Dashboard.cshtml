@@ -94,23 +94,7 @@
         }
         else
         {
-            <div class="results-bar-chart">
-                @foreach (var scenario in Model.ScenarioComparisons)
-                {
-                    <div class="results-bar-chart__item">
-                        <div class="results-bar-chart__header">
-                            <div>
-                                <strong>@scenario.Name</strong>
-                                <div class="text-sm text-muted">@scenario.ProfileTypeLabel · @scenario.Location</div>
-                            </div>
-                            <strong>@scenario.InitialBalanceDisplay</strong>
-                        </div>
-                        <div class="progress progress--lg">
-                            <div class="progress__bar" style="width: @(WidthValue(scenario.BalancePercentOfMax))%;"></div>
-                        </div>
-                    </div>
-                }
-            </div>
+            <canvas id="chartSaldos" height="180"></canvas>
         }
     </div>
 
@@ -122,24 +106,7 @@
             </div>
         </div>
 
-        <div class="results-summary-list">
-            <div class="results-summary-list__item">
-                <span>Pendentes</span>
-                <strong>@Model.PendingChallengesCount</strong>
-            </div>
-            <div class="results-summary-list__item">
-                <span>Submetidos</span>
-                <strong>@(Model.SubmittedChallengesCount - Model.ReviewedChallengesCount)</strong>
-            </div>
-            <div class="results-summary-list__item">
-                <span>Avaliados</span>
-                <strong>@Model.ReviewedChallengesCount</strong>
-            </div>
-            <div class="results-summary-list__item">
-                <span>Expirados</span>
-                <strong>@Model.ExpiredChallengesCount</strong>
-            </div>
-        </div>
+        <canvas id="chartDesafios" height="220"></canvas>
 
         <div class="progress-label" style="margin-top: var(--space-5);">
             <span>Entregas concluídas</span>
@@ -272,3 +239,88 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Gráfico de barras — saldos iniciais por cenário
+    @if (Model.ScenarioComparisons.Count > 0)
+    {
+        <text>
+        (function () {
+            var labels  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ScenarioComparisons.Select(x => x.Name)));
+            var valores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ScenarioComparisons.Select(x => x.InitialBalance)));
+
+            new Chart(document.getElementById('chartSaldos'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Saldo inicial (€)',
+                        data: valores,
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.parsed.y.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: val => val.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    // Gráfico donut — estado dos desafios
+    (function () {
+        var totais = [
+            @Model.PendingChallengesCount,
+            @(Model.SubmittedChallengesCount - Model.ReviewedChallengesCount),
+            @Model.ReviewedChallengesCount,
+            @Model.ExpiredChallengesCount
+        ];
+
+        new Chart(document.getElementById('chartDesafios'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pendentes', 'Submetidos', 'Avaliados', 'Expirados'],
+                datasets: [{
+                    data: totais,
+                    backgroundColor: [
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    })();
+</script>
+}
