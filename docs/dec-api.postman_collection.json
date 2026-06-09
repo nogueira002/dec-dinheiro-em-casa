@@ -1,0 +1,226 @@
+{
+  "info": {
+    "name": "DEC — Dinheiro Em Casa · API",
+    "description": "Coleção de testes para a API de cálculo financeiro do projeto DEC.\nBase URL: https://localhost/api/",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Geral",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Verifica se a API está online. Devolve mensagem de boas-vindas, linguagem e estado."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"mensagem\": \"Bem-vindo à API de cálculo financeiro do DEC\",\n  \"linguagem\": \"Python / Django REST Framework\",\n  \"status\": \"online\",\n  \"timestamp\": \"2026-06-09T10:00:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Calculadoras",
+      "item": [
+        {
+          "name": "Taxa de Esforço",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"encargos_fixos\": 650,\n  \"rendimento_liquido\": 1800\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/taxa-esforco/",
+              "host": ["{{baseUrl}}"],
+              "path": ["taxa-esforco", ""]
+            },
+            "description": "Calcula a taxa de esforço financeiro (encargos / rendimento) e devolve uma classificação: Baixo, Moderado, Alto ou Crítico."
+          },
+          "response": [
+            {
+              "name": "200 OK — Moderado",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"taxa_esforco\": 36.11,\n  \"classificacao\": \"Moderado\"\n}"
+            },
+            {
+              "name": "400 Bad Request — campo em falta",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"rendimento_liquido\": [\"This field is required.\"]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Capitalização Composta",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capital\": 5000,\n  \"tan\": 0.03,\n  \"meses\": 24\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/capitalizacao/",
+              "host": ["{{baseUrl}}"],
+              "path": ["capitalizacao", ""]
+            },
+            "description": "Capitalização composta com TAN anual. O campo `tan` é uma fração decimal (ex: 0.03 = 3%)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"montante_final\": 5304.35,\n  \"juros_gerados\": 304.35\n}"
+            }
+          ]
+        },
+        {
+          "name": "Simular Crédito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emprestimo\": 15000,\n  \"tan\": 0.045,\n  \"meses\": 48\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/simular-credito/",
+              "host": ["{{baseUrl}}"],
+              "path": ["simular-credito", ""]
+            },
+            "description": "Calcula a prestação mensal (método Price), custo total e juros totais de um empréstimo."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"prestacao_mensal\": 341.55,\n  \"custo_total\": 16394.40,\n  \"juros_totais\": 1394.40\n}"
+            }
+          ]
+        },
+        {
+          "name": "Projeção de Poupança",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rendimento_mensal\": 1800,\n  \"despesas_mensais\": 900,\n  \"taxa_inflacao\": 0.025,\n  \"meses\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projecao-poupanca/",
+              "host": ["{{baseUrl}}"],
+              "path": ["projecao-poupanca", ""]
+            },
+            "description": "Projeta a poupança acumulada ao longo do tempo tendo em conta a inflação mensal."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"poupanca_acumulada\": 10650.30,\n  \"saldo_medio_mensal\": 887.53,\n  \"break_even_mes\": null\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Simulação Completa",
+      "item": [
+        {
+          "name": "Simular — Estratégia Conservadora",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"strategy\": \"conservative\",\n  \"rendimento_mensal\": 1800,\n  \"despesas_mensais\": 600,\n  \"encargos_fixos\": 650,\n  \"capital_poupanca\": 530,\n  \"emprestimo\": 15000,\n  \"meses\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/simulate/",
+              "host": ["{{baseUrl}}"],
+              "path": ["simulate", ""]
+            },
+            "description": "Simulação financeira completa com estratégia conservadora.\nTaxas: juro poupança 1,5% · inflação 4,0% · juro crédito 6,0%"
+          },
+          "response": []
+        },
+        {
+          "name": "Simular — Estratégia Moderada",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"strategy\": \"moderate\",\n  \"rendimento_mensal\": 1800,\n  \"despesas_mensais\": 600,\n  \"encargos_fixos\": 650,\n  \"capital_poupanca\": 530,\n  \"emprestimo\": 15000,\n  \"meses\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/simulate/",
+              "host": ["{{baseUrl}}"],
+              "path": ["simulate", ""]
+            },
+            "description": "Simulação financeira completa com estratégia moderada.\nTaxas: juro poupança 3,0% · inflação 2,5% · juro crédito 4,5%"
+          },
+          "response": []
+        },
+        {
+          "name": "Simular — Estratégia Agressiva",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"strategy\": \"aggressive\",\n  \"rendimento_mensal\": 1800,\n  \"despesas_mensais\": 600,\n  \"encargos_fixos\": 650,\n  \"capital_poupanca\": 530,\n  \"emprestimo\": 15000,\n  \"meses\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/simulate/",
+              "host": ["{{baseUrl}}"],
+              "path": ["simulate", ""]
+            },
+            "description": "Simulação financeira completa com estratégia agressiva.\nTaxas: juro poupança 5,0% · inflação 1,5% · juro crédito 3,0%"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

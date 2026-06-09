@@ -148,6 +148,33 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ──────────────────────────────────────────────
+  # Backup automático — corre mysqldump todos os dias às 02:00
+  # Guarda os ficheiros em ./backups/ e mantém os últimos 7 dias
+  # ──────────────────────────────────────────────
+  mysql-backup:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+    entrypoint: >
+      sh -c "
+        chmod +x /backup.sh &&
+        echo '0 2 * * * /backup.sh >> /backups/backup.log 2>&1' | crontab - &&
+        crond -f
+      "
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mysql-financeira:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
 # ──────────────────────────────────────────────
 # Rede interna — MySQL nunca acessível externamente
 # ──────────────────────────────────────────────
