@@ -103,12 +103,7 @@ public sealed class AdminUserService : IAdminUserService
         var isNowActive = user.UserStatus != "Active";
         user.UserStatus = isNowActive ? "Active" : "Inactive";
 
-        if (!isNowActive)
-        {
-            // invalidate session immediately on deactivation
-            user.SessionTokenHash = null;
-            user.SessionExpiresAtUtc = null;
-        }
+        // Ao desativar o utilizador, a sua cookie expira naturalmente ao fim da sessão
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return (true, isNowActive, user.Name);
@@ -134,10 +129,7 @@ public sealed class AdminUserService : IAdminUserService
         }
 
         user.Role = UserRoles.Normalize(newRole);
-        // invalidate session so the user re-autentica com o novo papel
-        user.SessionTokenHash = null;
-        user.SessionExpiresAtUtc = null;
-
+        // A cookie do utilizador expira naturalmente; no próximo login terá o novo papel
         await _dbContext.SaveChangesAsync(cancellationToken);
         return (true, user.Name, user.Role);
     }

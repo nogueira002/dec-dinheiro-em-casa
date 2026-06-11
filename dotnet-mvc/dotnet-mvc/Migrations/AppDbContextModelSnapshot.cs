@@ -434,13 +434,6 @@ namespace dotnet_mvc.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
-                    b.Property<DateTime?>("SessionExpiresAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("SessionTokenHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
                     b.Property<string>("UserStatus")
                         .IsRequired()
                         .HasMaxLength(32)

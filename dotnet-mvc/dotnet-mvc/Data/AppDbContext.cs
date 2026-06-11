@@ -34,7 +34,6 @@ public class AppDbContext : DbContext
             entity.Property(u => u.PasswordHash).HasMaxLength(512);
             entity.Property(u => u.Role).HasMaxLength(32);
             entity.Property(u => u.UserStatus).HasMaxLength(32);
-            entity.Property(u => u.SessionTokenHash).HasMaxLength(128);
         });
 
         modelBuilder.Entity<Scenario>(entity =>
