@@ -4,6 +4,12 @@
 nginx/certs/
 
 # ========================
+# Backups MySQL (gerados automaticamente, não versionar)
+# ========================
+backups/*.sql
+backups/*.log
+
+# ========================
 # .NET / C#
 # ========================
 bin/
