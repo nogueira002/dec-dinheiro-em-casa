@@ -40,13 +40,18 @@ public class ProfessorController : AuthenticatedControllerBase
     {
         ApplyDashboardContext("Desafios", "challenges", GetManagementRole());
 
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue)
+        IReadOnlyList<ProfessorChallengeListItemViewModel> challenges;
+        if (User.IsInRole(UserRoles.Admin))
         {
-            return Forbid();
+            challenges = await _academicManagementService.GetAllChallengesAsync(cancellationToken);
+        }
+        else
+        {
+            var professorId = User.GetUserId();
+            if (!professorId.HasValue) return Forbid();
+            challenges = await _academicManagementService.GetProfessorChallengesAsync(professorId.Value, cancellationToken);
         }
 
-        var challenges = await _academicManagementService.GetProfessorChallengesAsync(professorId.Value, cancellationToken);
         var model = new ProfessorChallengesIndexViewModel
         {
             Challenges = challenges,
@@ -61,16 +66,19 @@ public class ProfessorController : AuthenticatedControllerBase
     {
         ApplyDashboardContext("Turmas", "classes", GetManagementRole());
 
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue)
+        IReadOnlyList<ClassroomListItemViewModel> classes;
+        if (User.IsInRole(UserRoles.Admin))
         {
-            return Forbid();
+            classes = await _academicManagementService.GetAllClassroomsAsync(cancellationToken);
+        }
+        else
+        {
+            var professorId = User.GetUserId();
+            if (!professorId.HasValue) return Forbid();
+            classes = await _academicManagementService.GetProfessorClassroomsAsync(professorId.Value, cancellationToken);
         }
 
-        var model = new ClassesIndexViewModel
-        {
-            Classes = await _academicManagementService.GetProfessorClassroomsAsync(professorId.Value, cancellationToken)
-        };
+        var model = new ClassesIndexViewModel { Classes = classes };
 
         model.TotalStudents = model.Classes
             .SelectMany(x => x.Students)
@@ -130,14 +138,24 @@ public class ProfessorController : AuthenticatedControllerBase
     {
         ApplyDashboardContext("Submissões", "submissions", GetManagementRole());
 
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue)
-        {
-            return Forbid();
-        }
+        IReadOnlyList<SubmissionListItemViewModel> allSubmissions;
+        IReadOnlyList<ClassroomOptionViewModel> classes;
+        IReadOnlyList<ChallengeOptionViewModel> challenges;
 
-        var allSubmissions = await _academicManagementService.GetProfessorSubmissionsAsync(
-            professorId.Value, challengeId, classroomId, cancellationToken);
+        if (User.IsInRole(UserRoles.Admin))
+        {
+            allSubmissions = await _academicManagementService.GetAllSubmissionsAsync(challengeId, classroomId, cancellationToken);
+            classes        = await _academicManagementService.GetAllClassroomOptionsAsync(onlyActive: false, cancellationToken);
+            challenges     = await _academicManagementService.GetAllChallengeOptionsAsync(onlyDraft: false, cancellationToken);
+        }
+        else
+        {
+            var professorId = User.GetUserId();
+            if (!professorId.HasValue) return Forbid();
+            allSubmissions = await _academicManagementService.GetProfessorSubmissionsAsync(professorId.Value, challengeId, classroomId, cancellationToken);
+            classes        = await _academicManagementService.GetProfessorClassroomOptionsAsync(professorId.Value, onlyActive: false, cancellationToken);
+            challenges     = await _academicManagementService.GetProfessorChallengeOptionsAsync(professorId.Value, onlyDraft: false, cancellationToken);
+        }
 
         var filtered = status switch
         {
@@ -145,12 +163,6 @@ public class ProfessorController : AuthenticatedControllerBase
             "graded"  => allSubmissions.Where(x => x.IsGraded).ToList(),
             _         => (IReadOnlyList<SubmissionListItemViewModel>)allSubmissions
         };
-
-        var classes = await _academicManagementService.GetProfessorClassroomOptionsAsync(
-            professorId.Value, onlyActive: false, cancellationToken);
-
-        var challenges = await _academicManagementService.GetProfessorChallengeOptionsAsync(
-            professorId.Value, onlyDraft: false, cancellationToken);
 
         var model = new SubmissionsIndexViewModel
         {
@@ -232,40 +244,59 @@ public class ProfessorController : AuthenticatedControllerBase
     {
         ApplyDashboardContext("Alunos", "progress", GetManagementRole());
 
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue)
+        IReadOnlyList<ClassroomOptionViewModel> availableClasses;
+        IReadOnlyList<ProfessorStudentListItemViewModel> students;
+
+        if (User.IsInRole(UserRoles.Admin))
         {
-            return Forbid();
+            availableClasses = await _academicManagementService.GetAllClassroomOptionsAsync(onlyActive: false, cancellationToken);
+            var selectedClassId = availableClasses.Any(x => x.Id == classId) ? classId : null;
+            students = await _academicManagementService.GetAllStudentsAsync(selectedClassId, cancellationToken);
+            var model = new ProfessorStudentsIndexViewModel
+            {
+                SelectedClassId = selectedClassId,
+                AvailableClasses = availableClasses,
+                Students = students,
+                TotalStudents = students.Select(x => x.StudentId).Distinct().Count(),
+                TotalAvailableChallenges = students.Sum(x => x.AvailableChallengesCount),
+                TotalSubmittedChallenges = students.Sum(x => x.SubmittedChallengesCount),
+                TotalReviewedChallenges = students.Sum(x => x.ReviewedChallengesCount)
+            };
+            model.OverallCompletionRateLabel = model.TotalAvailableChallenges == 0
+                ? "0%"
+                : $"{Math.Round((decimal)model.TotalSubmittedChallenges * 100m / model.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
+            return View(model);
         }
 
-        var availableClasses = await _academicManagementService.GetProfessorClassroomOptionsAsync(
-            professorId.Value,
-            onlyActive: false,
-            cancellationToken);
+        var professorId = User.GetUserId();
+        if (!professorId.HasValue) return Forbid();
 
-        var selectedClassId = availableClasses.Any(x => x.Id == classId) ? classId : null;
-        var model = new ProfessorStudentsIndexViewModel
+        availableClasses = await _academicManagementService.GetProfessorClassroomOptionsAsync(
+            professorId.Value, onlyActive: false, cancellationToken);
+
+        var selClassId = availableClasses.Any(x => x.Id == classId) ? classId : null;
+        var model2 = new ProfessorStudentsIndexViewModel
         {
-            SelectedClassId = selectedClassId,
+            SelectedClassId = selClassId,
             AvailableClasses = availableClasses,
             Students = await _academicManagementService.GetProfessorStudentsAsync(
                 professorId.Value,
-                selectedClassId,
+                selClassId,
                 cancellationToken)
         };
 
-        model.TotalStudents = model.Students
+        model2.TotalStudents = model2.Students
             .Select(x => x.StudentId)
             .Distinct()
             .Count();
-        model.TotalAvailableChallenges = model.Students.Sum(x => x.AvailableChallengesCount);
-        model.TotalSubmittedChallenges = model.Students.Sum(x => x.SubmittedChallengesCount);
-        model.TotalReviewedChallenges = model.Students.Sum(x => x.ReviewedChallengesCount);
-        model.OverallCompletionRateLabel = model.TotalAvailableChallenges == 0
+        model2.TotalAvailableChallenges = model2.Students.Sum(x => x.AvailableChallengesCount);
+        model2.TotalSubmittedChallenges = model2.Students.Sum(x => x.SubmittedChallengesCount);
+        model2.TotalReviewedChallenges = model2.Students.Sum(x => x.ReviewedChallengesCount);
+        model2.OverallCompletionRateLabel = model2.TotalAvailableChallenges == 0
             ? "0%"
-            : $"{Math.Round((decimal)model.TotalSubmittedChallenges * 100m / model.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
+            : $"{Math.Round((decimal)model2.TotalSubmittedChallenges * 100m / model2.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
 
-        return View(model);
+        return View(model2);
     }
 
     public IActionResult CreateChallenge(CancellationToken cancellationToken)
@@ -409,22 +440,26 @@ public class ProfessorController : AuthenticatedControllerBase
 
     private async Task PopulateAssignChallengeFormAsync(AssignChallengeViewModel model, CancellationToken cancellationToken)
     {
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue)
+        IReadOnlyList<ChallengeOptionViewModel> challenges;
+        IReadOnlyList<ClassroomOptionViewModel> classes;
+
+        if (User.IsInRole(UserRoles.Admin))
         {
-            model.AvailableChallenges = [];
-            model.AvailableClasses = [];
-            return;
+            challenges = await _academicManagementService.GetAllChallengeOptionsAsync(onlyDraft: true, cancellationToken);
+            classes    = await _academicManagementService.GetAllClassroomOptionsAsync(cancellationToken: cancellationToken);
         }
-
-        var challenges = await _academicManagementService.GetProfessorChallengeOptionsAsync(
-            professorId.Value,
-            onlyDraft: true,
-            cancellationToken: cancellationToken);
-
-        var classes = await _academicManagementService.GetProfessorClassroomOptionsAsync(
-            professorId.Value,
-            cancellationToken: cancellationToken);
+        else
+        {
+            var professorId = User.GetUserId();
+            if (!professorId.HasValue)
+            {
+                model.AvailableChallenges = [];
+                model.AvailableClasses = [];
+                return;
+            }
+            challenges = await _academicManagementService.GetProfessorChallengeOptionsAsync(professorId.Value, onlyDraft: true, cancellationToken: cancellationToken);
+            classes    = await _academicManagementService.GetProfessorClassroomOptionsAsync(professorId.Value, cancellationToken: cancellationToken);
+        }
 
         model.AvailableChallenges = challenges
             .Select(x => new SelectListItem($"{x.Title} ({x.AccessCode})", x.Id.ToString()))
