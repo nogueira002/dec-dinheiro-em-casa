@@ -162,9 +162,10 @@ services:
       - ./backups:/backups
     entrypoint: >
       sh -c "
-        chmod +x /backup.sh &&
-        echo '0 2 * * * /backup.sh >> /backups/backup.log 2>&1' | crontab - &&
-        crond -f
+        while true; do
+          sh /backup.sh >> /backups/backup.log 2>&1;
+          sleep 86400;
+        done
       "
     depends_on:
       mysql:

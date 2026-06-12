@@ -278,7 +278,7 @@ p {
 .navbar__logo {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background-color: #0c73b7;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -821,7 +821,7 @@ p {
 
 .progress__bar {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background-color: #0c73b7;
     border-radius: var(--radius-full);
     transition: width 0.5s ease;
 }
@@ -1009,7 +1009,295 @@ p {
 .grid--auto-lg { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 
 /* =============================================================
-   17. RESPONSIVO
+   17. COMPONENTES DE FORMULÁRIO EXTRA
+   ============================================================= */
+
+/* Wrapper de largura máxima para páginas de formulário */
+.form-page-wrapper {
+    max-width: 720px;
+}
+
+/* Form row com 3 colunas */
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+/* Campo com prefixo/sufixo (ex: €) */
+.input-addon {
+    display: flex;
+    align-items: stretch;
+}
+
+.input-addon__prefix,
+.input-addon__suffix {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+    background-color: var(--color-gray-100);
+    border: 1.5px solid var(--color-gray-300);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    color: var(--color-gray-500);
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    border-right: none;
+}
+
+.input-addon__suffix {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    border-left: none;
+    border-right: 1.5px solid var(--color-gray-300);
+}
+
+.input-addon__input {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+    flex: 1;
+}
+
+/* Checkbox estilizada */
+.form-check-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
+.form-check-input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Checkmark nas option-cards */
+.option-card {
+    position: relative;
+}
+
+.option-card__check {
+    position: absolute;
+    top: 0.625rem;
+    right: 0.625rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.option-card:has(input:checked) .option-card__check {
+    display: flex;
+}
+
+.option-card__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3);
+}
+
+.option-card:has(input:checked) .option-card__icon {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+/* =============================================================
+   18. CENÁRIOS — GRID E CARDS
+   ============================================================= */
+.scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+}
+
+.scenario-item {
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.scenario-item:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.scenario-item__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem 0.75rem;
+}
+
+.scenario-item__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.scenario-item__body {
+    padding: 0 1.25rem 0.875rem;
+}
+
+.scenario-item__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-dark);
+    margin: 0 0 0.375rem;
+}
+
+.scenario-item__details {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+    color: var(--color-gray-500);
+}
+
+.scenario-item__details span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.scenario-item__balance {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 1.25rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--color-gray-100);
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.scenario-item__balance-label {
+    font-size: 0.8125rem;
+    color: var(--color-gray-500);
+}
+
+.scenario-item__balance-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: var(--font-headline);
+}
+
+.scenario-item__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1.25rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.scenario-item__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.scenario-item__date {
+    font-size: 0.75rem;
+    color: var(--color-gray-400);
+    white-space: nowrap;
+}
+
+/* =============================================================
+   19. SELETOR DE CENÁRIO (ENTRIES)
+   ============================================================= */
+.scenario-picker {
+    max-width: 640px;
+}
+
+.scenario-picker__label {
+    font-size: 0.9375rem;
+    color: var(--color-gray-600);
+    margin-bottom: 1rem;
+}
+
+.scenario-picker__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.scenario-picker-card {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    background-color: var(--color-white);
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-dark);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.scenario-picker-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(4px);
+    color: var(--color-dark);
+}
+
+.scenario-picker-card__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.scenario-picker-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.scenario-picker-card__body strong {
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.scenario-picker-card__body span {
+    font-size: 0.8125rem;
+    color: var(--color-gray-500);
+}
+
+/* =============================================================
+   20. RESPONSIVO
    ============================================================= */
 @media (max-width: 992px) {
     .grid--3,
@@ -1069,7 +1357,12 @@ p {
         grid-template-columns: 1fr;
     }
 
-    .form-row {
+    .form-row,
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .scenarios-grid {
         grid-template-columns: 1fr;
     }
 

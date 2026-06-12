@@ -5,88 +5,86 @@
     Layout = "_AuthLayout";
 }
 
-<h1 class="auth__title">Cria a tua conta</h1>
-<p class="auth__subtitle">É gratuito e leva menos de um minuto.</p>
+<div class="ac-head">
+    <h1>Criar conta</h1>
+    <div class="ac-sub">Junta-te à DEC e começa a tua jornada financeira.</div>
+</div>
 
-<form asp-controller="Auth" asp-action="Register" method="post" novalidate>
+<form asp-controller="Auth" asp-action="Register" method="post" novalidate class="stack-2">
+
     <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
-    <div class="form-group">
-        <label asp-for="Name" class="form-label form-label--required"></label>
+    <div class="field">
+        <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name"
-               class="form-control"
+               class="input"
                placeholder="Ex.: Maria Costa"
                autocomplete="name"
                required />
-        <span asp-validation-for="Name" class="field-validation-error"></span>
+        <span asp-validation-for="Name" class="field-error"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Email" class="form-label form-label--required"></label>
+    <div class="field">
+        <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email"
-               class="form-control"
+               class="input"
                placeholder="exemplo@escola.pt"
                autocomplete="email"
                required />
-        <span asp-validation-for="Email" class="field-validation-error"></span>
+        <span asp-validation-for="Email" class="field-error"></span>
     </div>
 
     <div class="form-row">
-        <div class="form-group">
-            <label asp-for="Password" class="form-label form-label--required"></label>
+        <div class="field">
+            <label asp-for="Password" class="form-label"></label>
             <input asp-for="Password"
-                   class="form-control"
+                   class="input"
                    placeholder="Mínimo 8 caracteres"
                    autocomplete="new-password"
                    required />
-            <span asp-validation-for="Password" class="field-validation-error"></span>
+            <span asp-validation-for="Password" class="field-error"></span>
         </div>
-
-        <div class="form-group">
-            <label asp-for="ConfirmPassword" class="form-label form-label--required"></label>
+        <div class="field">
+            <label asp-for="ConfirmPassword" class="form-label"></label>
             <input asp-for="ConfirmPassword"
-                   class="form-control"
+                   class="input"
                    placeholder="Repete a password"
                    autocomplete="new-password"
                    required />
-            <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
+            <span asp-validation-for="ConfirmPassword" class="field-error"></span>
         </div>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Role" class="form-label form-label--required">Sou…</label>
-        <div class="option-cards">
-            <label class="option-card">
+    <div class="field">
+        <label class="form-label">Sou…</label>
+        <div class="role-pick">
+            <label class="role-opt">
                 <input asp-for="Role" type="radio" value="Student" />
-                <div class="option-card__title">Aluno</div>
-                <div class="option-card__desc">Quero aprender e fazer cenários</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
+                <div class="ro-name">Aluno</div>
             </label>
-            <label class="option-card">
+            <label class="role-opt">
                 <input asp-for="Role" type="radio" value="Professor" />
-                <div class="option-card__title">Professor</div>
-                <div class="option-card__desc">Quero gerir turmas e desafios</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 19a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M5 19a3 3 0 0 1 3-3M19 19a3 3 0 0 0-3-3"/></svg>
+                <div class="ro-name">Professor</div>
             </label>
         </div>
-        <span asp-validation-for="Role" class="field-validation-error"></span>
+        <span asp-validation-for="Role" class="field-error"></span>
     </div>
 
-    <div class="form-check">
+    <label class="check">
         <input asp-for="Terms" />
-        <label asp-for="Terms">
-            Aceito os <a href="#">termos de utilização</a> e a
-            <a asp-controller="Home" asp-action="Privacy">política de privacidade</a>.
-        </label>
-        <span asp-validation-for="Terms" class="field-validation-error"></span>
-    </div>
+        <span>Aceito os <a asp-controller="Home" asp-action="Privacy">termos</a> e a <a asp-controller="Home" asp-action="Privacy">política de privacidade</a></span>
+    </label>
+    <span asp-validation-for="Terms" class="field-error" style="margin-top:-12px;display:block;"></span>
 
-    <div class="form-actions">
-        <button type="submit" class="btn btn--primary btn--block btn--lg">
-            Criar conta
-        </button>
-    </div>
+    <button type="submit" class="btn btn-primary btn-lg btn-block">
+        Criar a minha conta
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
 </form>
 
-<p class="auth__footer-text">
+<p class="auth-footer-text">
     Já tens conta?
     <a asp-controller="Auth" asp-action="Login">Entrar</a>
 </p>

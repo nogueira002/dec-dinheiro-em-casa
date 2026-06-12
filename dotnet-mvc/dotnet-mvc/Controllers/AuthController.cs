@@ -16,25 +16,18 @@ public class AuthController : Controller
 {
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly ISessionTokenService _sessionTokenService;
 
-    public AuthController(
-        AppDbContext dbContext,
-        IPasswordHasher<User> passwordHasher,
-        ISessionTokenService sessionTokenService)
+    public AuthController(AppDbContext dbContext, IPasswordHasher<User> passwordHasher)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
-        _sessionTokenService = sessionTokenService;
     }
 
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(returnUrl, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(returnUrl, User.FindFirstValue(ClaimTypes.Role));
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
@@ -44,52 +37,44 @@ public class AuthController : Controller
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(model.ReturnUrl, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(model.ReturnUrl, User.FindFirstValue(ClaimTypes.Role));
 
         if (!ModelState.IsValid)
-        {
             return View(model);
-        }
 
-        var normalizedEmail = NormalizeEmail(model.Email);
-        var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Email == normalizedEmail);
+        // 1. Procurar o utilizador pelo email
+        var email = model.Email.Trim().ToLowerInvariant();
+        var utilizador = await _dbContext.Users.SingleOrDefaultAsync(u => u.Email == email);
 
-        if (user is null ||
-            !string.Equals(user.UserStatus, "Active", StringComparison.OrdinalIgnoreCase))
+        // 2. Verificar se existe e está ativo
+        if (utilizador is null || utilizador.UserStatus != "Active")
         {
             ModelState.AddModelError(string.Empty, "Email ou password inválidos.");
             return View(model);
         }
 
-        var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
-        if (verification == PasswordVerificationResult.Failed)
+        // 3. Verificar a password
+        var resultado = _passwordHasher.VerifyHashedPassword(utilizador, utilizador.PasswordHash, model.Password);
+        if (resultado == PasswordVerificationResult.Failed)
         {
             ModelState.AddModelError(string.Empty, "Email ou password inválidos.");
             return View(model);
         }
 
-        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
-        {
-            user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
-        }
-
-        await SignInUserAsync(user, model.RememberMe);
+        // 4. Criar a sessão (cookie)
+        await IniciarSessaoAsync(utilizador, model.RememberMe);
 
         TempData["StatusType"] = "success";
         TempData["StatusMessage"] = "Sessão iniciada com sucesso.";
 
-        return RedirectToSafeLocalUrl(model.ReturnUrl, user.Role);
+        return RedirecionarParaDashboard(model.ReturnUrl, utilizador.Role);
     }
 
     [AllowAnonymous]
     public IActionResult Register()
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(null, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(null, User.FindFirstValue(ClaimTypes.Role));
 
         return View(new RegisterViewModel());
     }
@@ -99,34 +84,32 @@ public class AuthController : Controller
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(null, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(null, User.FindFirstValue(ClaimTypes.Role));
 
         if (!ModelState.IsValid)
-        {
             return View(model);
-        }
 
-        var normalizedEmail = NormalizeEmail(model.Email);
-        var emailExists = await _dbContext.Users.AnyAsync(u => u.Email == normalizedEmail);
-        if (emailExists)
+        var email = model.Email.Trim().ToLowerInvariant();
+
+        // Verificar se o email já está registado
+        var emailExiste = await _dbContext.Users.AnyAsync(u => u.Email == email);
+        if (emailExiste)
         {
             ModelState.AddModelError(nameof(model.Email), "Já existe uma conta com este email.");
             return View(model);
         }
 
-        var user = new User
+        // Criar o novo utilizador
+        var utilizador = new User
         {
             Name = model.Name.Trim(),
-            Email = normalizedEmail,
+            Email = email,
             Role = UserRoles.Normalize(model.Role),
             UserStatus = "Active"
         };
+        utilizador.PasswordHash = _passwordHasher.HashPassword(utilizador, model.Password);
 
-        user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
-
-        _dbContext.Users.Add(user);
+        _dbContext.Users.Add(utilizador);
 
         try
         {
@@ -138,21 +121,19 @@ public class AuthController : Controller
             return View(model);
         }
 
-        await SignInUserAsync(user, rememberMe: false);
+        await IniciarSessaoAsync(utilizador, rememberMe: false);
 
         TempData["StatusType"] = "success";
         TempData["StatusMessage"] = "Conta criada com sucesso.";
 
-        return RedirectToSafeLocalUrl(null, user.Role);
+        return RedirecionarParaDashboard(null, utilizador.Role);
     }
 
     [AllowAnonymous]
     public IActionResult ForgotPassword()
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(null, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(null, User.FindFirstValue(ClaimTypes.Role));
 
         return View(new ForgotPasswordViewModel());
     }
@@ -162,38 +143,19 @@ public class AuthController : Controller
     public IActionResult ForgotPassword(ForgotPasswordViewModel model)
     {
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToSafeLocalUrl(null, User.FindFirstValue(ClaimTypes.Role));
-        }
+            return RedirecionarParaDashboard(null, User.FindFirstValue(ClaimTypes.Role));
 
         if (!ModelState.IsValid)
-        {
             return View(model);
-        }
 
-        return View(new ForgotPasswordViewModel
-        {
-            Email = model.Email,
-            IsConfirmationDisplayed = true
-        });
+        return View(new ForgotPasswordViewModel { Email = model.Email, IsConfirmationDisplayed = true });
     }
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Logout()
     {
-        var userId = User.GetUserId();
-        if (userId.HasValue)
-        {
-            var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Id == userId.Value);
-            if (user is not null)
-            {
-                user.SessionTokenHash = null;
-                user.SessionExpiresAtUtc = null;
-                await _dbContext.SaveChangesAsync();
-            }
-        }
-
+        // Terminar a sessão — apaga a cookie do browser
         await HttpContext.SignOutAsync(AuthConstants.AuthenticationScheme);
 
         TempData["StatusType"] = "info";
@@ -203,56 +165,42 @@ public class AuthController : Controller
     }
 
     [AllowAnonymous]
-    public IActionResult AccessDenied()
+    public IActionResult AccessDenied() => View();
+
+    // Cria a cookie de sessão com os dados do utilizador
+    private async Task IniciarSessaoAsync(User utilizador, bool rememberMe)
     {
-        return View();
-    }
+        var agora = DateTime.UtcNow;
+        var expira = agora.Add(rememberMe ? AuthConstants.PersistentSessionLifetime : AuthConstants.SessionLifetime);
 
-    private async Task SignInUserAsync(User user, bool rememberMe)
-    {
-        var now = DateTime.UtcNow;
-        var expiresAt = now.Add(rememberMe
-            ? AuthConstants.PersistentSessionLifetime
-            : AuthConstants.SessionLifetime);
-
-        var sessionToken = _sessionTokenService.GenerateToken();
-        user.SessionTokenHash = _sessionTokenService.HashToken(sessionToken);
-        user.SessionExpiresAtUtc = expiresAt;
-        user.LastLoginAtUtc = now;
-
+        // Guardar data do último login
+        utilizador.LastLoginAtUtc = agora;
         await _dbContext.SaveChangesAsync();
 
-        var identity = new ClaimsIdentity(
-            AppClaimsFactory.CreateClaims(user, sessionToken),
-            AuthConstants.AuthenticationScheme);
-
+        // Criar a identidade com os dados do utilizador
+        var claims   = AppClaimsFactory.CriarClaims(utilizador);
+        var identity  = new ClaimsIdentity(claims, AuthConstants.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
 
+        // Assinar a cookie — o ASP.NET Core trata da encriptação e validação
         await HttpContext.SignInAsync(
             AuthConstants.AuthenticationScheme,
             principal,
             new AuthenticationProperties
             {
                 IsPersistent = rememberMe,
-                AllowRefresh = true,
-                IssuedUtc = now,
-                ExpiresUtc = expiresAt
+                IssuedUtc    = agora,
+                ExpiresUtc   = expira
             });
     }
 
-    private IActionResult RedirectToSafeLocalUrl(string? returnUrl, string? role)
+    // Redirecionar para o dashboard correto consoante o role
+    private IActionResult RedirecionarParaDashboard(string? returnUrl, string? role)
     {
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
             return LocalRedirect(returnUrl);
-        }
 
-        var route = UserRoles.GetDefaultRoute(role);
-        return RedirectToAction(route.Action, route.Controller);
-    }
-
-    private static string NormalizeEmail(string email)
-    {
-        return email.Trim().ToLowerInvariant();
+        var rota = UserRoles.GetDefaultRoute(role);
+        return RedirectToAction(rota.Action, rota.Controller);
     }
 }

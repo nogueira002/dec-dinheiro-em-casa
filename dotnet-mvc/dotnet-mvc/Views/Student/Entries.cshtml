@@ -1,11 +1,16 @@
 @using System.Globalization
 @model dotnet_mvc.ViewModels.Student.EntriesIndexViewModel
+
 @{
-    ViewData["Title"] = "Lançamentos";
+    ViewData["Title"]      = "Lançamentos";
+    ViewData["PageTitle"]  = "Lançamentos financeiros";
+    ViewData["Role"]       = "Student";
+    ViewData["ActiveMenu"] = "entries";
     Layout = "_DashboardLayout";
+
     var pt = CultureInfo.GetCultureInfo("pt-PT");
     string Money(decimal v) => string.Format(pt, "{0:N2} €", v);
-    var balance = Model.Balance;
+    var balance      = Model.Balance;
     var balanceColor = balance >= 0 ? "var(--color-success)" : "var(--color-danger)";
 }
 
@@ -19,87 +24,132 @@
         }
         else
         {
-            <p class="page-header__subtitle">Seleciona um cenário para ver os lançamentos.</p>
+            <p class="page-header__subtitle">Seleciona um cenário para gerir os seus lançamentos.</p>
         }
     </div>
+    @if (Model.SelectedScenarioId.HasValue)
+    {
+        <div class="page-header__actions">
+            <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Entries">Mudar cenário</a>
+        </div>
+    }
 </div>
 
-@* Seletor de cenário *@
 @if (!Model.SelectedScenarioId.HasValue)
 {
-    <div class="card mb-6">
-        <div class="card__header">
-            <h2 class="card__title">Escolhe um cenário</h2>
-        </div>
-        @if (Model.AvailableScenarios.Count == 0)
-        {
-            <div class="empty-state">
-                <div class="empty-state__icon">📂</div>
-                <div class="empty-state__title">Ainda não tens cenários</div>
-                <p class="empty-state__text">Cria primeiro um cenário familiar na secção Cenários.</p>
-                <a asp-controller="Student" asp-action="Scenarios" class="btn btn--primary">Ir para Cenários</a>
+    @* Seletor de cenário *@
+    @if (Model.AvailableScenarios.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-state__icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
             </div>
-        }
-        else
-        {
-            <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+            <h3 class="empty-state__title">Ainda não tens cenários</h3>
+            <p class="empty-state__text">Cria primeiro um cenário familiar na secção Cenários para depois lhe adicionar lançamentos.</p>
+            <a asp-controller="Student" asp-action="Scenarios" class="btn btn--primary">Ir para Cenários</a>
+        </div>
+    }
+    else
+    {
+        <div class="scenario-picker">
+            <p class="scenario-picker__label">Escolhe o cenário para gerir os lançamentos:</p>
+            <div class="scenario-picker__grid">
                 @foreach (var s in Model.AvailableScenarios)
                 {
-                    <a asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@s.Id"
-                       class="btn btn--outline">@s.Name</a>
+                    <a class="scenario-picker-card" asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@s.Id">
+                        <div class="scenario-picker-card__icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                        </div>
+                        <div class="scenario-picker-card__body">
+                            <strong>@s.Name</strong>
+                            <span>@s.Location</span>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted-fg); flex-shrink:0;">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </a>
                 }
             </div>
-        }
-    </div>
+        </div>
+    }
 }
 else
 {
-    @* Stat cards *@
+    @* KPIs *@
     <div class="grid grid--3 mb-6">
-        <div class="stat-card">
-            <div class="stat-card__icon stat-card__icon--success">↑</div>
+        <div class="stat-card stat-card--accent-success">
+            <div class="stat-card__icon stat-card__icon--success">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="18 15 12 9 6 15"/>
+                </svg>
+            </div>
             <div class="stat-card__content">
                 <div class="stat-card__label">Rendimentos</div>
                 <div class="stat-card__value">@Money(Model.TotalIncome)</div>
+                <div class="stat-card__hint">Total do período</div>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-card__icon stat-card__icon--danger">↓</div>
+
+        <div class="stat-card stat-card--accent-danger">
+            <div class="stat-card__icon stat-card__icon--danger">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </div>
             <div class="stat-card__content">
                 <div class="stat-card__label">Despesas</div>
                 <div class="stat-card__value">@Money(Model.TotalExpense)</div>
+                <div class="stat-card__hint">Total do período</div>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-card__icon">€</div>
+
+        <div class="stat-card @(balance >= 0 ? "stat-card--accent-success" : "stat-card--accent-danger")">
+            <div class="stat-card__icon @(balance >= 0 ? "stat-card__icon--success" : "stat-card__icon--danger")">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+            </div>
             <div class="stat-card__content">
                 <div class="stat-card__label">Saldo</div>
                 <div class="stat-card__value" style="color: @balanceColor;">@Money(balance)</div>
+                <div class="stat-card__hint">Rendimentos − Despesas</div>
             </div>
         </div>
     </div>
 
-    @* Formulário de novo lançamento / edição *@
+    @* Formulário *@
     <div class="card mb-6" id="entryFormCard">
         <div class="card__header">
-            <h2 class="card__title" id="entryFormTitle">Novo lançamento</h2>
+            <div>
+                <h2 class="card__title" id="entryFormTitle">Novo lançamento</h2>
+                <p class="card__subtitle">Regista uma receita ou despesa neste cenário.</p>
+            </div>
         </div>
+
         <form id="entryForm"
               action="@Url.Action("AddEntry", "Student", new { scenarioId = Model.SelectedScenarioId })"
               data-add-url="@Url.Action("AddEntry", "Student", new { scenarioId = Model.SelectedScenarioId })"
               data-edit-base-url="@Url.Action("UpdateEntry", "Student", new { scenarioId = Model.SelectedScenarioId })&entryId="
               method="post">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
-            <div class="form-row">
-                <div class="form-group">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-4"></div>
+
+            <div class="form-row mb-4">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label form-label--required" asp-for="Form.EntryType">Tipo</label>
                     <select class="form-select" asp-for="Form.EntryType" id="entryTypeSelect">
                         <option value="Income">Rendimento</option>
                         <option value="Expense">Despesa</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label form-label--required" asp-for="Form.Category">Categoria</label>
                     <select class="form-select" asp-for="Form.Category" id="categorySelect">
                         @foreach (var c in dotnet_mvc.ViewModels.Student.CreateEntryViewModel.IncomeCategories)
@@ -107,14 +157,20 @@ else
                             <option value="@c">@c</option>
                         }
                     </select>
-                    <span class="text-danger" asp-validation-for="Form.Category"></span>
+                    <span class="field-validation-error" asp-validation-for="Form.Category"></span>
                 </div>
-                <div class="form-group">
+            </div>
+
+            <div class="form-row-3 mb-4">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label form-label--required" asp-for="Form.Amount">Valor (€)</label>
-                    <input class="form-control" type="number" step="0.01" min="0.01" asp-for="Form.Amount" placeholder="0,00" />
-                    <span class="text-danger" asp-validation-for="Form.Amount"></span>
+                    <div class="input-addon">
+                        <span class="input-addon__prefix">€</span>
+                        <input class="form-control input-addon__input" type="number" step="0.01" min="0.01" asp-for="Form.Amount" placeholder="0,00" />
+                    </div>
+                    <span class="field-validation-error" asp-validation-for="Form.Amount"></span>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label form-label--required" asp-for="Form.Month">Mês</label>
                     <select class="form-select" asp-for="Form.Month">
                         @for (int m = 1; m <= 12; m++)
@@ -125,39 +181,36 @@ else
                         }
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label form-label--required" asp-for="Form.Year">Ano</label>
                     <input class="form-control" type="number" asp-for="Form.Year" min="2000" max="2100" />
-                    <span class="text-danger" asp-validation-for="Form.Year"></span>
+                    <span class="field-validation-error" asp-validation-for="Form.Year"></span>
                 </div>
             </div>
-            <div id="recurringRow" style="display:none; margin-bottom: var(--space-4);">
-                <label style="display:flex; align-items:center; gap: var(--space-2); cursor:pointer; font-size:0.875rem; font-weight:500; color: var(--color-gray-700);">
-                    <input type="checkbox" asp-for="Form.IsRecurring" style="width:1rem; height:1rem; accent-color: var(--color-primary); cursor:pointer;" />
-                    Encargo fixo (mensal recorrente) — ex: renda, seguro, prestação
+
+            <div id="recurringRow" style="display:none; margin-bottom: 1.25rem;">
+                <label class="form-check-label">
+                    <input type="checkbox" asp-for="Form.IsRecurring" class="form-check-input" />
+                    <span>Encargo fixo mensal — ex: renda, seguro, prestação</span>
                 </label>
-                <p style="font-size:0.8rem; color: var(--color-gray-500); margin: 0.25rem 0 0 1.5rem;">
-                    Marca esta opção para que esta despesa seja contabilizada como encargo fixo nas simulações.
-                </p>
+                <p class="form-hint" style="margin-left: 1.5rem;">Esta despesa será contabilizada como encargo fixo nas simulações financeiras.</p>
             </div>
+
             <div class="form-actions">
-                <button type="submit" id="entrySubmitBtn" class="btn btn--primary">Adicionar</button>
+                <button type="submit" id="entrySubmitBtn" class="btn btn--primary">Adicionar lançamento</button>
                 <button type="button" id="entryCancelBtn" class="btn btn--ghost" style="display:none" onclick="cancelEditEntry()">Cancelar edição</button>
             </div>
         </form>
     </div>
 
-    @* Filtro por tipo *@
+    @* Filtros *@
     <div class="filters-bar mb-4">
         <span class="filters-bar__label">Filtrar:</span>
-        <a asp-controller="Student" asp-action="Entries"
-           asp-route-scenarioId="@Model.SelectedScenarioId"
+        <a asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@Model.SelectedScenarioId"
            class="btn btn--sm @(Model.TypeFilter == null ? "btn--primary" : "btn--ghost")">Todos</a>
-        <a asp-controller="Student" asp-action="Entries"
-           asp-route-scenarioId="@Model.SelectedScenarioId" asp-route-type="Income"
+        <a asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@Model.SelectedScenarioId" asp-route-type="Income"
            class="btn btn--sm @(Model.TypeFilter == "Income" ? "btn--primary" : "btn--ghost")">Rendimentos</a>
-        <a asp-controller="Student" asp-action="Entries"
-           asp-route-scenarioId="@Model.SelectedScenarioId" asp-route-type="Expense"
+        <a asp-controller="Student" asp-action="Entries" asp-route-scenarioId="@Model.SelectedScenarioId" asp-route-type="Expense"
            class="btn btn--sm @(Model.TypeFilter == "Expense" ? "btn--primary" : "btn--ghost")">Despesas</a>
     </div>
 
@@ -165,9 +218,14 @@ else
     @if (Model.Entries.Count == 0)
     {
         <div class="empty-state">
-            <div class="empty-state__icon">📊</div>
-            <div class="empty-state__title">Sem lançamentos@(Model.TypeFilter != null ? " para este filtro" : "")</div>
-            <p class="empty-state__text">Adiciona o primeiro lançamento financeiro acima.</p>
+            <div class="empty-state__icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+            </div>
+            <h3 class="empty-state__title">Sem lançamentos@(Model.TypeFilter != null ? " para este filtro" : "")</h3>
+            <p class="empty-state__text">Usa o formulário acima para registar o primeiro lançamento financeiro.</p>
         </div>
     }
     else
@@ -180,10 +238,9 @@ else
                             <th>Tipo</th>
                             <th>Categoria</th>
                             <th>Valor</th>
-                            <th>Mês</th>
-                            <th>Ano</th>
+                            <th>Período</th>
                             <th>Fixo</th>
-                            <th style="text-align: right;">Ações</th>
+                            <th style="text-align:right;">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,11 +258,10 @@ else
                                     }
                                 </td>
                                 <td><strong>@e.Category</strong></td>
-                                <td style="font-weight: 600; color: @(e.IsIncome ? "var(--color-success)" : "var(--color-danger)");">
+                                <td style="font-weight:600; color:@(e.IsIncome ? "var(--color-success)" : "var(--color-danger)");">
                                     @(e.IsIncome ? "+" : "−") @Money(e.Amount)
                                 </td>
-                                <td>@e.MonthName</td>
-                                <td>@e.Year</td>
+                                <td>@e.MonthName @e.Year</td>
                                 <td>
                                     @if (!e.IsIncome && e.IsRecurring)
                                     {
@@ -216,14 +272,15 @@ else
                                         <span style="color:var(--color-gray-400)">—</span>
                                     }
                                 </td>
-                                <td style="text-align: right; white-space:nowrap;">
+                                <td style="text-align:right; white-space:nowrap;">
                                     <button type="button" class="btn btn--ghost btn--sm"
                                             onclick="editEntry(@e.Id,'@(e.IsIncome ? "Income" : "Expense")','@e.Category.Replace("'","\\'")',@e.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),@e.Month,@e.Year,@(e.IsRecurring && !e.IsIncome ? "true" : "false"))">
                                         Editar
                                     </button>
                                     <form asp-controller="Student" asp-action="DeleteEntry"
                                           asp-route-scenarioId="@Model.SelectedScenarioId"
-                                          asp-route-entryId="@e.Id" method="post"
+                                          asp-route-entryId="@e.Id"
+                                          method="post"
                                           onsubmit="return confirm('Apagar este lançamento?');"
                                           style="display:inline;">
                                         <button type="submit" class="btn btn--ghost btn--sm text-danger">Apagar</button>
@@ -300,7 +357,7 @@ else
             entryForm.reset();
             updateCategories(false);
             formTitle.textContent = 'Novo lançamento';
-            submitBtn.textContent = 'Adicionar';
+            submitBtn.textContent = 'Adicionar lançamento';
             cancelBtn.style.display = 'none';
         }
     </script>

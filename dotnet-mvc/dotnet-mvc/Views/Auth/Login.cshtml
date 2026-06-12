@@ -5,54 +5,53 @@
     Layout = "_AuthLayout";
 }
 
-<h1 class="auth__title">Bem-vindo de volta!</h1>
-<p class="auth__subtitle">Entra na tua conta para continuares a aprender.</p>
+<div class="ac-head">
+    <h1>Bem-vindo de volta</h1>
+    <div class="ac-sub">Entra para continuares a gerir o teu dinheiro.</div>
+</div>
 
-<form asp-controller="Auth" asp-action="Login" method="post" novalidate>
+<form asp-controller="Auth" asp-action="Login" method="post" novalidate class="stack-2">
     <input asp-for="ReturnUrl" type="hidden" />
 
     <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
-    <div class="form-group">
-        <label asp-for="Email" class="form-label form-label--required"></label>
+    <div class="field">
+        <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email"
-               class="form-control"
-               placeholder="exemplo@escola.pt"
+               class="input"
+               placeholder="o.teu.email@escola.pt"
                autocomplete="email"
                required />
-        <span asp-validation-for="Email" class="field-validation-error"></span>
+        <span asp-validation-for="Email" class="field-error"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Password" class="form-label form-label--required"></label>
+    <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+            <label asp-for="Password" class="form-label" style="margin-bottom:0;"></label>
+            <a asp-controller="Auth" asp-action="ForgotPassword" style="font-size:12.5px;font-weight:500;color:var(--zinc-500);">Esqueci-me</a>
+        </div>
         <input asp-for="Password"
-               class="form-control"
-               placeholder="A tua password"
+               class="input"
+               placeholder="••••••••"
                autocomplete="current-password"
                required />
-        <span asp-validation-for="Password" class="field-validation-error"></span>
-        <div class="auth__forgot">
-            <a asp-controller="Auth" asp-action="ForgotPassword">Esqueci-me da password</a>
-        </div>
+        <span asp-validation-for="Password" class="field-error"></span>
     </div>
 
-    <div class="form-check">
+    <label class="check">
         <input asp-for="RememberMe" />
-        <label asp-for="RememberMe"></label>
-    </div>
+        <span>Manter sessão iniciada</span>
+    </label>
 
-    <div class="form-actions">
-        <button type="submit" class="btn btn--primary btn--block btn--lg">
-            Entrar
-        </button>
-    </div>
+    <button type="submit" class="btn btn-primary btn-lg btn-block">
+        Entrar
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
 </form>
 
-<div class="auth__divider">ou</div>
-
-<p class="auth__footer-text">
+<p class="auth-footer-text">
     Ainda não tens conta?
-    <a asp-controller="Auth" asp-action="Register">Cria a tua conta gratuita</a>
+    <a asp-controller="Auth" asp-action="Register">Criar conta gratuita</a>
 </p>
 
 @section Scripts {

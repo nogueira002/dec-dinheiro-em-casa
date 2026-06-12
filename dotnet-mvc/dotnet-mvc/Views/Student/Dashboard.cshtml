@@ -10,11 +10,11 @@
 
     string StatusBadge(string key, string label) => key switch
     {
-        "expired" => $"<span class=\"badge badge--danger\">{label}</span>",
-        "pending" => $"<span class=\"badge badge--warning\">{label}</span>",
+        "expired"   => $"<span class=\"badge badge--danger\">{label}</span>",
+        "pending"   => $"<span class=\"badge badge--warning\">{label}</span>",
         "submitted" => $"<span class=\"badge badge--info\">{label}</span>",
-        "graded" => $"<span class=\"badge badge--success\">{label}</span>",
-        _ => $"<span class=\"badge badge--neutral\">{label}</span>"
+        "graded"    => $"<span class=\"badge badge--success\">{label}</span>",
+        _           => $"<span class=\"badge badge--neutral\">{label}</span>"
     };
 
     string WidthValue(decimal value) => value.ToString("0.#", CultureInfo.InvariantCulture);
@@ -23,44 +23,112 @@
 <div class="page-header">
     <div>
         <h1 class="page-header__title">Olá, @(User.Identity?.Name ?? "aluno") 👋</h1>
-        <p class="page-header__subtitle">Aqui está um resumo dos teus cenários e dos resultados pedagógicos mais recentes.</p>
-    </div>
-    <div class="page-header__actions">
-        <a class="btn btn--primary" asp-controller="Student" asp-action="JoinCode">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 7h3a5 5 0 0 1 0 10h-3"/><path d="M9 17H6A5 5 0 0 1 6 7h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            Aderir por código
-        </a>
-        <a class="btn btn--outline" asp-controller="Student" asp-action="CreateScenario">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Novo cenário
-        </a>
-        <a class="btn btn--ghost" asp-controller="Student" asp-action="Challenges">
-            Ver desafios
-        </a>
+        <p class="page-header__subtitle">Resumo dos teus cenários financeiros e desafios pedagógicos.</p>
     </div>
 </div>
 
+<!-- Ações rápidas -->
+<div class="quick-actions mb-6">
+    <a class="quick-action-card" asp-controller="Student" asp-action="CreateScenario">
+        <div class="quick-action-card__icon quick-action-card__icon--primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        </div>
+        <div class="quick-action-card__text">
+            <strong>Novo cenário</strong>
+            <span>Simula uma situação financeira</span>
+        </div>
+        <svg class="quick-action-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
+
+    <a class="quick-action-card" asp-controller="Student" asp-action="JoinCode">
+        <div class="quick-action-card__icon quick-action-card__icon--success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 7h3a5 5 0 0 1 0 10h-3"/>
+                <path d="M9 17H6A5 5 0 0 1 6 7h3"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+        </div>
+        <div class="quick-action-card__text">
+            <strong>Aderir por código</strong>
+            <span>Entra numa turma ou desafio</span>
+        </div>
+        <svg class="quick-action-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
+
+    <a class="quick-action-card" asp-controller="Student" asp-action="Challenges">
+        <div class="quick-action-card__icon quick-action-card__icon--warning">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+        </div>
+        <div class="quick-action-card__text">
+            <strong>Desafios</strong>
+            <span>@Model.PendingChallengesCount pendente@(Model.PendingChallengesCount == 1 ? "" : "s")</span>
+        </div>
+        <svg class="quick-action-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
+
+    <a class="quick-action-card" asp-controller="Student" asp-action="Simulations">
+        <div class="quick-action-card__icon quick-action-card__icon--info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+        </div>
+        <div class="quick-action-card__text">
+            <strong>Simulações</strong>
+            <span>Projeta a tua poupança</span>
+        </div>
+        <svg class="quick-action-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
+</div>
+
+<!-- KPIs -->
 <div class="grid grid--4 mb-8">
-    <div class="stat-card">
-        <div class="stat-card__icon">🏠</div>
+    <div class="stat-card stat-card--accent-primary">
+        <div class="stat-card__icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Cenários</div>
             <div class="stat-card__value">@Model.ScenarioCount</div>
-            <div class="stat-card__hint">Maior saldo: @Model.HighestInitialBalanceDisplay@(string.IsNullOrWhiteSpace(Model.HighestInitialBalanceScenarioName) ? string.Empty : $" · {Model.HighestInitialBalanceScenarioName}")</div>
+            <div class="stat-card__hint">Maior: @Model.HighestInitialBalanceDisplay</div>
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-card__icon">EUR</div>
+    <div class="stat-card stat-card--accent-success">
+        <div class="stat-card__icon stat-card__icon--success">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+        </div>
         <div class="stat-card__content">
-            <div class="stat-card__label">Saldo inicial médio</div>
+            <div class="stat-card__label">Saldo médio</div>
             <div class="stat-card__value">@Model.AverageInitialBalanceDisplay</div>
-            <div class="stat-card__hint">Comparação entre os teus cenários</div>
+            <div class="stat-card__hint">Média dos cenários criados</div>
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--info">★</div>
+    <div class="stat-card stat-card--accent-warning">
+        <div class="stat-card__icon stat-card__icon--warning">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+        </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Desafios</div>
             <div class="stat-card__value">@Model.ChallengeCount</div>
@@ -68,29 +136,42 @@
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--success">✓</div>
+    <div class="stat-card stat-card--accent-info">
+        <div class="stat-card__icon stat-card__icon--info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
         <div class="stat-card__content">
             <div class="stat-card__label">Taxa de entrega</div>
             <div class="stat-card__value">@Model.CompletionRateLabel</div>
-            <div class="stat-card__hint">Média das avaliações: @Model.AverageGradeDisplay</div>
+            <div class="stat-card__hint">Média das notas: @Model.AverageGradeDisplay</div>
         </div>
     </div>
 </div>
 
+<!-- Gráficos -->
 <div class="results-layout mb-8">
     <div class="card">
         <div class="card__header">
             <div>
-                <h2 class="card__title">Comparação de saldos iniciais</h2>
-                <p class="card__subtitle">Os teus cenários mais relevantes lado a lado.</p>
+                <h2 class="card__title">Comparação de cenários</h2>
+                <p class="card__subtitle">Saldo inicial de cada cenário.</p>
             </div>
             <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Scenarios">Ver todos</a>
         </div>
 
         @if (Model.ScenarioComparisons.Count == 0)
         {
-            <p class="text-sm text-muted">Cria o teu primeiro cenário para começar a comparar resultados no dashboard.</p>
+            <div class="empty-state">
+                <div class="empty-state__icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 9 9 12 3 15 15 18 9 21 9"/>
+                    </svg>
+                </div>
+                <p class="empty-state__text">Cria o teu primeiro cenário para ver o gráfico comparativo.</p>
+                <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="CreateScenario">Criar cenário</a>
+            </div>
         }
         else
         {
@@ -102,84 +183,115 @@
         <div class="card__header">
             <div>
                 <h2 class="card__title">Estado dos desafios</h2>
-                <p class="card__subtitle">Resumo rápido das tuas entregas.</p>
+                <p class="card__subtitle">Distribuição das tuas entregas.</p>
             </div>
         </div>
 
-        <canvas id="chartDesafios" height="220"></canvas>
-
-        <div class="progress-label" style="margin-top: var(--space-5);">
-            <span>Entregas concluídas</span>
-            <strong>@Model.CompletionRateLabel</strong>
-        </div>
-        <div class="progress progress--lg">
-            <div class="progress__bar @(Model.ReviewedChallengesCount > 0 ? "progress__bar--success" : Model.SubmittedChallengesCount > 0 ? "progress__bar--warning" : string.Empty)"
-                 style="width: @(WidthValue(Model.CompletionRatePercent))%;"></div>
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.UpcomingDeadlineText))
+        @if (Model.ChallengeCount == 0)
         {
-            <div class="alert alert--warning" style="margin-top: var(--space-5); margin-bottom: 0;">
-                <span>!</span>
-                <div>
-                    <strong>Próxima entrega</strong><br />
-                    @Model.UpcomingDeadlineText
+            <div class="empty-state">
+                <div class="empty-state__icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
                 </div>
+                <p class="empty-state__text">Adere a uma turma com um código para receberes desafios do professor.</p>
+                <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="JoinCode">Aderir por código</a>
             </div>
+        }
+        else
+        {
+            <canvas id="chartDesafios" height="180"></canvas>
+
+            <div class="progress-label" style="margin-top: var(--space-5);">
+                <span>Entregas concluídas</span>
+                <strong>@Model.CompletionRateLabel</strong>
+            </div>
+            <div class="progress progress--lg">
+                <div class="progress__bar @(Model.ReviewedChallengesCount > 0 ? "progress__bar--success" : Model.SubmittedChallengesCount > 0 ? "progress__bar--warning" : string.Empty)"
+                     style="width: @(WidthValue(Model.CompletionRatePercent))%;"></div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.UpcomingDeadlineText))
+            {
+                <div class="alert alert--warning" style="margin-top: var(--space-5); margin-bottom: 0;">
+                    <span>!</span>
+                    <div>
+                        <strong>Próxima entrega</strong><br />
+                        @Model.UpcomingDeadlineText
+                    </div>
+                </div>
+            }
         }
     </div>
 </div>
 
+<!-- Tabelas -->
 <div class="grid grid--auto-md">
     <div class="card">
         <div class="card__header">
             <div>
                 <h2 class="card__title">Resultados dos desafios</h2>
-                <p class="card__subtitle">Comparação entre estado, prazo e nota.</p>
+                <p class="card__subtitle">Estado, prazo e avaliação.</p>
             </div>
         </div>
 
         @if (Model.ChallengeResults.Count == 0)
         {
-            <p class="text-sm text-muted">Ainda não tens desafios atribuídos. Usa um código de adesão para começares.</p>
+            <div class="empty-state">
+                <div class="empty-state__icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <p class="empty-state__text">Ainda sem desafios atribuídos. Usa um código de adesão para entrares numa turma.</p>
+            </div>
         }
         else
         {
-            <div class="table-wrapper">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Desafio</th>
+                            <th>Estado</th>
+                            <th>Nota</th>
+                            <th>Prazo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var challenge in Model.ChallengeResults)
+                        {
                             <tr>
-                                <th>Desafio</th>
-                                <th>Estado</th>
-                                <th>Nota</th>
-                                <th>Prazo</th>
+                                <td>
+                                    <div>
+                                        <strong>@challenge.Title</strong>
+                                        <div class="text-sm text-muted">@challenge.ClassroomName · @challenge.Professor</div>
+                                    </div>
+                                </td>
+                                <td>@Html.Raw(StatusBadge(challenge.StatusKey, challenge.StatusLabel))</td>
+                                <td>
+                                    @if (challenge.GradeDisplay != null)
+                                    {
+                                        <strong>@challenge.GradeDisplay</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@challenge.Deadline.ToString("dd/MM/yyyy")</div>
+                                    @if (challenge.SubmittedAtUtc.HasValue)
+                                    {
+                                        <div class="text-sm text-muted">Entregue @challenge.SubmittedAtUtc.Value.ToString("dd/MM")</div>
+                                    }
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var challenge in Model.ChallengeResults)
-                            {
-                                <tr>
-                                    <td>
-                                        <div>
-                                            <strong>@challenge.Title</strong>
-                                            <div class="text-sm text-muted">@challenge.ClassroomName · @challenge.Professor</div>
-                                        </div>
-                                    </td>
-                                    <td>@Html.Raw(StatusBadge(challenge.StatusKey, challenge.StatusLabel))</td>
-                                    <td>@(challenge.GradeDisplay ?? "—")</td>
-                                    <td>
-                                        <div>@challenge.Deadline.ToString("dd/MM/yyyy")</div>
-                                        @if (challenge.SubmittedAtUtc.HasValue)
-                                        {
-                                            <div class="text-sm text-muted">Entregue @challenge.SubmittedAtUtc.Value.ToString("dd/MM")</div>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
         }
 
@@ -192,50 +304,51 @@
         <div class="card__header">
             <div>
                 <h2 class="card__title">Cenários recentes</h2>
-                <p class="card__subtitle">Consulta rápida para análise comparável.</p>
+                <p class="card__subtitle">Os teus cenários mais recentes.</p>
             </div>
         </div>
 
         @if (Model.RecentScenarios.Count == 0)
         {
-            <p class="text-sm text-muted">Ainda não criaste cenários. Quando criares, eles passam a aparecer aqui com dados resumidos.</p>
+            <div class="empty-state">
+                <div class="empty-state__icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </div>
+                <p class="empty-state__text">Ainda não criaste cenários. Cria o primeiro para começar a planear as tuas finanças.</p>
+                <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="CreateScenario">Criar cenário</a>
+            </div>
         }
         else
         {
-            <div class="table-wrapper">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Cenário</th>
-                                <th>Perfil</th>
-                                <th>Saldo</th>
-                                <th>Atualizado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var scenario in Model.RecentScenarios)
-                            {
-                                <tr>
-                                    <td>
-                                        <div>
-                                            <strong>@scenario.Name</strong>
-                                            <div class="text-sm text-muted">@scenario.Location</div>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge badge--primary">@scenario.ProfileTypeLabel</span></td>
-                                    <td>@scenario.InitialBalanceDisplay</td>
-                                    <td>@scenario.UpdatedAtUtc.ToString("dd/MM/yyyy")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+            <div class="scenario-list">
+                @foreach (var scenario in Model.RecentScenarios)
+                {
+                    <div class="scenario-list-item">
+                        <div class="scenario-list-item__icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                        </div>
+                        <div class="scenario-list-item__body">
+                            <div class="scenario-list-item__name">@scenario.Name</div>
+                            <div class="scenario-list-item__meta">
+                                @scenario.Location
+                                <span class="badge badge--primary" style="font-size:0.65rem; padding: 0.1rem 0.4rem;">@scenario.ProfileTypeLabel</span>
+                            </div>
+                        </div>
+                        <div class="scenario-list-item__balance">@scenario.InitialBalanceDisplay</div>
+                    </div>
+                }
             </div>
         }
 
         <div class="card__footer">
             <a class="btn btn--ghost btn--sm" asp-controller="Student" asp-action="Scenarios">Gerir cenários →</a>
+            <a class="btn btn--primary btn--sm" asp-controller="Student" asp-action="CreateScenario">+ Novo</a>
         </div>
     </div>
 </div>
@@ -243,7 +356,6 @@
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Gráfico de barras — saldos iniciais por cenário
     @if (Model.ScenarioComparisons.Count > 0)
     {
         <text>
@@ -288,39 +400,43 @@
         </text>
     }
 
-    // Gráfico donut — estado dos desafios
-    (function () {
-        var totais = [
-            @Model.PendingChallengesCount,
-            @(Model.SubmittedChallengesCount - Model.ReviewedChallengesCount),
-            @Model.ReviewedChallengesCount,
-            @Model.ExpiredChallengesCount
-        ];
+    @if (Model.ChallengeCount > 0)
+    {
+        <text>
+        (function () {
+            var totais = [
+                @Model.PendingChallengesCount,
+                @(Model.SubmittedChallengesCount - Model.ReviewedChallengesCount),
+                @Model.ReviewedChallengesCount,
+                @Model.ExpiredChallengesCount
+            ];
 
-        new Chart(document.getElementById('chartDesafios'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Pendentes', 'Submetidos', 'Avaliados', 'Expirados'],
-                datasets: [{
-                    data: totais,
-                    backgroundColor: [
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(239, 68, 68, 0.8)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom' }
+            new Chart(document.getElementById('chartDesafios'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendentes', 'Submetidos', 'Avaliados', 'Expirados'],
+                    datasets: [{
+                        data: totais,
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
                 }
-            }
-        });
-    })();
+            });
+        })();
+        </text>
+    }
 </script>
 }

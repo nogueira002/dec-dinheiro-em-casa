@@ -1,13 +1,17 @@
 @model dotnet_mvc.ViewModels.Student.ScenarioEditorViewModel
 
 @{
-    var formAction = Model.IsEditMode ? "EditScenario" : "CreateScenario";
-    var pageTitle = Model.IsEditMode ? "Editar cenário" : "Criar cenário";
+    var formAction  = Model.IsEditMode ? "EditScenario" : "CreateScenario";
+    var pageTitle   = Model.IsEditMode ? "Editar cenário" : "Criar cenário";
     var pageSubtitle = Model.IsEditMode
         ? "Atualiza os parâmetros do cenário para manter a informação correta."
         : "Define o perfil da família que vais simular.";
     var submitLabel = Model.IsEditMode ? "Guardar alterações" : "Criar cenário";
-    ViewData["Title"] = pageTitle;
+
+    ViewData["Title"]      = pageTitle;
+    ViewData["PageTitle"]  = pageTitle;
+    ViewData["Role"]       = "Student";
+    ViewData["ActiveMenu"] = "scenarios";
     Layout = "_DashboardLayout";
 }
 
@@ -21,11 +25,11 @@
     </div>
 </div>
 
-<div style="max-width: 720px;">
-
+<div class="form-page-wrapper">
     <form asp-controller="Student" asp-action="@formAction" asp-route-id="@Model.Id" method="post" novalidate>
         <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
 
+        <!-- Identificação -->
         <div class="card mb-6">
             <div class="card__header">
                 <div>
@@ -36,10 +40,7 @@
 
             <div class="form-group">
                 <label asp-for="Name" class="form-label form-label--required"></label>
-                <input asp-for="Name"
-                       class="form-control"
-                       placeholder="Ex.: Família Silva"
-                       required />
+                <input asp-for="Name" class="form-control" placeholder="Ex.: Família Silva" required />
                 <span asp-validation-for="Name" class="field-validation-error"></span>
                 <span class="form-hint">Um nome curto e fácil de identificar.</span>
             </div>
@@ -47,71 +48,89 @@
             <div class="form-row">
                 <div class="form-group">
                     <label asp-for="Location" class="form-label form-label--required"></label>
-                    <input asp-for="Location"
-                           class="form-control"
-                           placeholder="Ex.: Lisboa"
-                           required />
+                    <input asp-for="Location" class="form-control" placeholder="Ex.: Lisboa" required />
                     <span asp-validation-for="Location" class="field-validation-error"></span>
                 </div>
-
                 <div class="form-group">
                     <label asp-for="MembersCount" class="form-label form-label--required"></label>
-                    <input asp-for="MembersCount"
-                           class="form-control"
-                           type="number"
-                           min="1"
-                           max="10"
-                           required />
+                    <input asp-for="MembersCount" class="form-control" type="number" min="1" max="10" required />
                     <span asp-validation-for="MembersCount" class="field-validation-error"></span>
                 </div>
             </div>
 
             <div class="form-group">
                 <label asp-for="InitialBalance" class="form-label form-label--required"></label>
-                <input asp-for="InitialBalance"
-                       class="form-control"
-                       type="number"
-                       step="0.01"
-                       min="0"
-                       placeholder="0,00"
-                       required />
+                <div class="input-addon">
+                    <span class="input-addon__prefix">€</span>
+                    <input asp-for="InitialBalance" class="form-control input-addon__input"
+                           type="number" step="0.01" min="0" placeholder="0,00" required />
+                </div>
                 <span asp-validation-for="InitialBalance" class="field-validation-error"></span>
                 <span class="form-hint">O valor disponível em conta no início do cenário.</span>
             </div>
         </div>
 
+        <!-- Tipo de família -->
         <div class="card mb-6">
             <div class="card__header">
                 <div>
                     <h2 class="card__title">Tipo de família</h2>
-                    <p class="card__subtitle">Escolhe o perfil que melhor se aplica.</p>
+                    <p class="card__subtitle">Escolhe o perfil que melhor se aplica à situação a simular.</p>
                 </div>
             </div>
 
             <div class="option-cards">
                 <label class="option-card">
                     <input asp-for="ProfileType" type="radio" value="@dotnet_mvc.Models.ScenarioProfileType.StudentDeslocado" />
-                    <div class="option-card__title">🎓 Estudante deslocado</div>
+                    <div class="option-card__check">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="option-card__icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </div>
+                    <div class="option-card__title">Estudante deslocado</div>
                     <div class="option-card__desc">A viver fora de casa para estudar.</div>
                 </label>
+
                 <label class="option-card">
                     <input asp-for="ProfileType" type="radio" value="@dotnet_mvc.Models.ScenarioProfileType.Casal" />
-                    <div class="option-card__title">💑 Casal</div>
+                    <div class="option-card__check">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="option-card__icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="option-card__title">Casal</div>
                     <div class="option-card__desc">Dois rendimentos, despesas partilhadas.</div>
                 </label>
+
                 <label class="option-card">
                     <input asp-for="ProfileType" type="radio" value="@dotnet_mvc.Models.ScenarioProfileType.Monoparental" />
-                    <div class="option-card__title">👩‍👧 Família monoparental</div>
+                    <div class="option-card__check">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="option-card__icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="option-card__title">Família monoparental</div>
                     <div class="option-card__desc">Um adulto a cargo de um ou mais filhos.</div>
                 </label>
             </div>
+
+            <span asp-validation-for="ProfileType" class="field-validation-error" style="margin-top: 0.5rem; display: block;"></span>
         </div>
 
         <div class="form-actions">
             <button type="submit" class="btn btn--primary btn--lg">@submitLabel</button>
             <a class="btn btn--ghost" asp-controller="Student" asp-action="Scenarios">Cancelar</a>
         </div>
-
     </form>
 </div>
 

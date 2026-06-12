@@ -35,8 +35,6 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<ISessionTokenService, SessionTokenService>();
-builder.Services.AddScoped<CookieSessionValidator>();
 builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
 builder.Services.AddScoped<IAcademicManagementService, AcademicManagementService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
@@ -81,7 +79,6 @@ builder.Services
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = AuthConstants.SessionLifetime;
         options.SlidingExpiration = false;
-        options.EventsType = typeof(CookieSessionValidator);
     });
 
 var app = builder.Build();
@@ -91,6 +88,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+await SeedData.SeedDemoAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
