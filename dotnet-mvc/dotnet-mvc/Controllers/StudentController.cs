@@ -761,23 +761,26 @@ public class StudentController : AuthenticatedControllerBase
     private async Task<EntriesIndexViewModel> BuildEntriesViewModelAsync(
         int userId, int? scenarioId, string? typeFilter, CancellationToken ct)
     {
-        var scenarios = await _scenarioService.GetUserScenariosAsync(userId, ct);
-        var entries = scenarioId.HasValue
-            ? await _entryService.GetScenarioEntriesAsync(userId, scenarioId.Value, typeFilter, ct)
-            : [];
-
-        var allEntries = scenarioId.HasValue
+        var cenarios      = await _scenarioService.GetUserScenariosAsync(userId, ct);
+        var todosLancamentos = scenarioId.HasValue
             ? await _entryService.GetScenarioEntriesAsync(userId, scenarioId.Value, null, ct)
             : [];
+
+        var lancamentosFiltrados = typeFilter switch
+        {
+            "Income"  => todosLancamentos.Where(e => e.IsIncome).ToList(),
+            "Expense" => todosLancamentos.Where(e => !e.IsIncome).ToList(),
+            _         => (IReadOnlyList<EntryListItemViewModel>)todosLancamentos
+        };
 
         return new EntriesIndexViewModel
         {
             SelectedScenarioId = scenarioId,
-            AvailableScenarios = scenarios,
-            Entries = entries,
-            TypeFilter = typeFilter,
-            TotalIncome = allEntries.Where(e => e.IsIncome).Sum(e => e.Amount),
-            TotalExpense = allEntries.Where(e => !e.IsIncome).Sum(e => e.Amount)
+            AvailableScenarios = cenarios,
+            Entries            = lancamentosFiltrados,
+            TypeFilter         = typeFilter,
+            TotalIncome        = todosLancamentos.Where(e => e.IsIncome).Sum(e => e.Amount),
+            TotalExpense       = todosLancamentos.Where(e => !e.IsIncome).Sum(e => e.Amount)
         };
     }
 

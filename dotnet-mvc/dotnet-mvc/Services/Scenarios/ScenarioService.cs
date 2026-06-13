@@ -1,9 +1,9 @@
-using dotnet_mvc.Data;
+using System.Data;
 using dotnet_mvc.Extensions;
 using dotnet_mvc.Models;
 using dotnet_mvc.Models.DAL;
 using dotnet_mvc.ViewModels.Student;
-using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace dotnet_mvc.Services.Scenarios;
 
@@ -16,77 +16,85 @@ public interface IScenarioService
     Task<ScenarioQuickDataDto?> GetScenarioQuickDataAsync(int userId, int scenarioId, CancellationToken cancellationToken = default);
 }
 
-public sealed class ScenarioService : IScenarioService
+public sealed class ScenarioService : DriverDB, IScenarioService
 {
-    private readonly AppDbContext _dbContext;
     private readonly ScenarioCRUD _crud = new();
 
-    public ScenarioService(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-
-    // Delega em ScenarioCRUD → sp_GetUserScenarios
-    public Task<IReadOnlyList<ScenarioListItemViewModel>> GetUserScenariosAsync(int userId, CancellationToken cancellationToken = default)
+    // sp_GetUserScenarios — delega no CRUD legado
+    public Task<IReadOnlyList<ScenarioListItemViewModel>> GetUserScenariosAsync(
+        int userId, CancellationToken cancellationToken = default)
         => _crud.ListarAsync(userId, cancellationToken);
 
-    public async Task<ScenarioEditorViewModel?> GetScenarioForEditAsync(int userId, int scenarioId, CancellationToken cancellationToken = default)
+    public async Task<ScenarioEditorViewModel?> GetScenarioForEditAsync(
+        int userId, int scenarioId, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Scenarios
-            .AsNoTracking()
-            .Where(x => x.OwnerId == userId && x.Id == scenarioId)
-            .Select(x => new ScenarioEditorViewModel
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Location = x.Location,
-                MembersCount = x.MembersCount,
-                InitialBalance = x.InitialBalance,
-                ProfileType = x.ProfileType
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-    }
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_GetScenarioById";
+        cmd.Parameters.Add("p_scenario_id", MySqlDbType.Int32).Value = scenarioId;
+        cmd.Parameters.Add("p_owner_id",    MySqlDbType.Int32).Value = userId;
 
-    public async Task<int> CreateScenarioAsync(int userId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default)
-    {
-        var now = DateTime.UtcNow;
-        var scenario = new Scenario
+        DataTable dt = await GetSelectAsync(cmd, cancellationToken);
+        if (dt.Rows.Count == 0) return null;
+
+        DataRow row = dt.Rows[0];
+        return new ScenarioEditorViewModel
         {
-            OwnerId = userId,
-            Name = model.Name.Trim(),
-            Location = model.Location.Trim(),
-            MembersCount = model.MembersCount,
-            InitialBalance = model.InitialBalance!.Value,
-            ProfileType = model.ProfileType,
-            CreatedAtUtc = now,
-            UpdatedAtUtc = now
+            Id             = Convert.ToInt32(row["Id"]),
+            Name           = row["Name"].ToString()!,
+            Location       = row["Location"].ToString()!,
+            MembersCount   = Convert.ToInt32(row["MembersCount"]),
+            InitialBalance = Convert.ToDecimal(row["InitialBalance"]),
+            ProfileType    = (ScenarioProfileType)Convert.ToInt32(row["ProfileType"])
         };
-
-        _dbContext.Scenarios.Add(scenario);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return scenario.Id;
     }
 
-    public async Task<bool> UpdateScenarioAsync(int userId, int scenarioId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default)
+    public async Task<int> CreateScenarioAsync(
+        int userId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default)
     {
-        var scenario = await _dbContext.Scenarios
-            .SingleOrDefaultAsync(x => x.OwnerId == userId && x.Id == scenarioId, cancellationToken);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_CreateScenario";
+        cmd.Parameters.Add("p_owner_id",        MySqlDbType.Int32).Value        = userId;
+        cmd.Parameters.Add("p_name",            MySqlDbType.VarChar, 120).Value = model.Name.Trim();
+        cmd.Parameters.Add("p_location",        MySqlDbType.VarChar, 120).Value = model.Location.Trim();
+        cmd.Parameters.Add("p_members_count",   MySqlDbType.Int32).Value        = model.MembersCount;
+        cmd.Parameters.Add("p_initial_balance", MySqlDbType.Decimal).Value      = model.InitialBalance!.Value;
+        cmd.Parameters.Add("p_profile_type",    MySqlDbType.Int32).Value        = (int)model.ProfileType;
 
-        if (scenario is null) return false;
+        MySqlParameter pId      = new MySqlParameter("p_id",       MySqlDbType.Int32)        { Direction = ParameterDirection.Output };
+        MySqlParameter pHaErro  = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg     = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pId); cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
 
-        scenario.Name = model.Name.Trim();
-        scenario.Location = model.Location.Trim();
-        scenario.MembersCount = model.MembersCount;
-        scenario.InitialBalance = model.InitialBalance!.Value;
-        scenario.ProfileType = model.ProfileType;
-        scenario.UpdatedAtUtc = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return true;
+        await ExecuteNonQueryAsync(cmd, cancellationToken);
+        return Convert.ToInt32(pId.Value);
     }
 
-    // Delega em ScenarioCRUD → sp_GetScenarioQuickData
-    public Task<ScenarioQuickDataDto?> GetScenarioQuickDataAsync(int userId, int scenarioId, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateScenarioAsync(
+        int userId, int scenarioId, ScenarioEditorViewModel model, CancellationToken cancellationToken = default)
+    {
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_UpdateScenario";
+        cmd.Parameters.Add("p_scenario_id",     MySqlDbType.Int32).Value        = scenarioId;
+        cmd.Parameters.Add("p_owner_id",        MySqlDbType.Int32).Value        = userId;
+        cmd.Parameters.Add("p_name",            MySqlDbType.VarChar, 120).Value = model.Name.Trim();
+        cmd.Parameters.Add("p_location",        MySqlDbType.VarChar, 120).Value = model.Location.Trim();
+        cmd.Parameters.Add("p_members_count",   MySqlDbType.Int32).Value        = model.MembersCount;
+        cmd.Parameters.Add("p_initial_balance", MySqlDbType.Decimal).Value      = model.InitialBalance!.Value;
+        cmd.Parameters.Add("p_profile_type",    MySqlDbType.Int32).Value        = (int)model.ProfileType;
+
+        MySqlParameter pHaErro  = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg     = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
+
+        await ExecuteNonQueryAsync(cmd, cancellationToken);
+        return Convert.ToInt32(pHaErro.Value) == 0;
+    }
+
+    // sp_GetScenarioQuickData — delega no CRUD legado
+    public Task<ScenarioQuickDataDto?> GetScenarioQuickDataAsync(
+        int userId, int scenarioId, CancellationToken cancellationToken = default)
         => _crud.GetQuickDataAsync(userId, scenarioId, cancellationToken);
 }

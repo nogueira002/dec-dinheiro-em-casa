@@ -5,8 +5,6 @@ using dotnet_mvc.Services.Admin;
 using dotnet_mvc.Services.Dashboard;
 using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
-using Microsoft.EntityFrameworkCore;
-using dotnet_mvc.Data;
 using dotnet_mvc.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -15,17 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("A connection string 'DefaultConnection' não está configurada.");
-var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
 
-// Disponibilizar a connection string às classes CRUD (padrão DriverDB, igual a Program.DbCon)
+// Disponibilizar a connection string às classes CRUD (padrão DriverDB)
 dotnet_mvc.Models.DAL.DriverDB.ConnectionString = connectionString;
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(
-        connectionString,
-        serverVersion
-    )
-);
 
 // Add services to the container.
 builder.Services
@@ -84,11 +74,6 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
 await SeedData.SeedDemoAsync(app.Services);
 
 // Configure the HTTP request pipeline.

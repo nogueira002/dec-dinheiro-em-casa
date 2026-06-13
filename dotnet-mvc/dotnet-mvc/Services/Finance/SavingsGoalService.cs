@@ -1,7 +1,7 @@
-using dotnet_mvc.Data;
-using dotnet_mvc.Models;
+using System.Data;
+using dotnet_mvc.Models.DAL;
 using dotnet_mvc.ViewModels.Student;
-using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace dotnet_mvc.Services.Finance;
 
@@ -13,102 +13,108 @@ public interface ISavingsGoalService
     Task<bool> DeleteGoalAsync(int userId, int goalId, CancellationToken ct = default);
 }
 
-public sealed class SavingsGoalService : ISavingsGoalService
+public sealed class SavingsGoalService : DriverDB, ISavingsGoalService
 {
-    private readonly AppDbContext _db;
-
-    public SavingsGoalService(AppDbContext db) => _db = db;
-
     public async Task<IReadOnlyList<GoalListItemViewModel>> GetScenarioGoalsAsync(
         int userId, int scenarioId, CancellationToken ct = default)
     {
-        var ownsScenario = await _db.Scenarios
-            .AsNoTracking()
-            .AnyAsync(s => s.Id == scenarioId && s.OwnerId == userId, ct);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_GetScenarioGoals";
+        cmd.Parameters.Add("p_scenario_id", MySqlDbType.Int32).Value = scenarioId;
+        cmd.Parameters.Add("p_owner_id",    MySqlDbType.Int32).Value = userId;
 
-        if (!ownsScenario)
+        DataTable dt = await GetSelectAsync(cmd, ct);
+        var result   = new List<GoalListItemViewModel>(dt.Rows.Count);
+
+        foreach (DataRow row in dt.Rows)
         {
-            return [];
+            var target  = Convert.ToDecimal(row["TargetAmount"]);
+            var saved   = Convert.ToDecimal(row["SavedAmount"]);
+            var pct     = target > 0
+                ? (int)Math.Min(100, Math.Round(saved / target * 100, MidpointRounding.AwayFromZero))
+                : 0;
+
+            result.Add(new GoalListItemViewModel
+            {
+                Id             = Convert.ToInt32(row["Id"]),
+                Description    = row["Description"].ToString()!,
+                TargetAmount   = target,
+                SavedAmount    = saved,
+                DeadlineMonths = Convert.ToInt32(row["DeadlineMonths"]),
+                ProgressPercent = pct,
+                CreatedAtUtc   = Convert.ToDateTime(row["CreatedAtUtc"])
+            });
         }
 
-        var rows = await _db.SavingsGoals
-            .AsNoTracking()
-            .Where(g => g.ScenarioId == scenarioId)
-            .OrderBy(g => g.CreatedAtUtc)
-            .Select(g => new { g.Id, g.Description, g.TargetAmount, g.SavedAmount, g.DeadlineMonths, g.CreatedAtUtc })
-            .ToListAsync(ct);
-
-        return rows.Select(g =>
-        {
-            var pct = g.TargetAmount > 0
-                ? (int)Math.Min(100, Math.Round(g.SavedAmount / g.TargetAmount * 100, MidpointRounding.AwayFromZero))
-                : 0;
-            return new GoalListItemViewModel
-            {
-                Id = g.Id,
-                Description = g.Description,
-                TargetAmount = g.TargetAmount,
-                SavedAmount = g.SavedAmount,
-                DeadlineMonths = g.DeadlineMonths,
-                ProgressPercent = pct,
-                CreatedAtUtc = g.CreatedAtUtc
-            };
-        }).ToList();
+        return result;
     }
 
-    public async Task<bool> CreateGoalAsync(int userId, int scenarioId, CreateObjectiveViewModel model, CancellationToken ct = default)
+    public async Task<bool> CreateGoalAsync(
+        int userId, int scenarioId, CreateObjectiveViewModel model, CancellationToken ct = default)
     {
-        var ownsScenario = await _db.Scenarios
-            .AnyAsync(s => s.Id == scenarioId && s.OwnerId == userId, ct);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_CreateSavingsGoal";
+        cmd.Parameters.Add("p_scenario_id",     MySqlDbType.Int32).Value        = scenarioId;
+        cmd.Parameters.Add("p_owner_id",        MySqlDbType.Int32).Value        = userId;
+        cmd.Parameters.Add("p_description",     MySqlDbType.VarChar, 200).Value = model.Description.Trim();
+        cmd.Parameters.Add("p_target_amount",   MySqlDbType.Decimal).Value      = model.TargetAmount;
+        cmd.Parameters.Add("p_deadline_months", MySqlDbType.Int32).Value        = model.DeadlineMonths;
 
-        if (!ownsScenario)
+        MySqlParameter pId      = new MySqlParameter("p_id",       MySqlDbType.Int32)        { Direction = ParameterDirection.Output };
+        MySqlParameter pHaErro  = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg     = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pId); cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
+
+        try
         {
-            return false;
+            await ExecuteNonQueryAsync(cmd, ct);
+            return Convert.ToInt32(pHaErro.Value) == 0;
         }
-
-        _db.SavingsGoals.Add(new SavingsGoal
-        {
-            ScenarioId = scenarioId,
-            Description = model.Description.Trim(),
-            TargetAmount = model.TargetAmount,
-            SavedAmount = 0,
-            DeadlineMonths = model.DeadlineMonths,
-            CreatedAtUtc = DateTime.UtcNow
-        });
-
-        await _db.SaveChangesAsync(ct);
-        return true;
+        catch { return false; }
     }
 
     public async Task<bool> AddSavingsAsync(int userId, int goalId, decimal amount, CancellationToken ct = default)
     {
-        var goal = await _db.SavingsGoals
-            .Include(g => g.Scenario)
-            .SingleOrDefaultAsync(g => g.Id == goalId && g.Scenario.OwnerId == userId, ct);
+        if (amount <= 0) return false;
 
-        if (goal is null || amount <= 0)
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_AddSavingsToGoal";
+        cmd.Parameters.Add("p_goal_id",  MySqlDbType.Int32).Value   = goalId;
+        cmd.Parameters.Add("p_owner_id", MySqlDbType.Int32).Value   = userId;
+        cmd.Parameters.Add("p_amount",   MySqlDbType.Decimal).Value = amount;
+
+        MySqlParameter pHaErro  = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg     = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
+
+        try
         {
-            return false;
+            await ExecuteNonQueryAsync(cmd, ct);
+            return Convert.ToInt32(pHaErro.Value) == 0;
         }
-
-        goal.SavedAmount = Math.Min(goal.SavedAmount + amount, goal.TargetAmount);
-        await _db.SaveChangesAsync(ct);
-        return true;
+        catch { return false; }
     }
 
     public async Task<bool> DeleteGoalAsync(int userId, int goalId, CancellationToken ct = default)
     {
-        var goal = await _db.SavingsGoals
-            .Include(g => g.Scenario)
-            .SingleOrDefaultAsync(g => g.Id == goalId && g.Scenario.OwnerId == userId, ct);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_DeleteSavingsGoal";
+        cmd.Parameters.Add("p_goal_id",  MySqlDbType.Int32).Value = goalId;
+        cmd.Parameters.Add("p_owner_id", MySqlDbType.Int32).Value = userId;
 
-        if (goal is null)
+        MySqlParameter pHaErro  = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg     = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
+
+        try
         {
-            return false;
+            await ExecuteNonQueryAsync(cmd, ct);
+            return Convert.ToInt32(pHaErro.Value) == 0;
         }
-
-        _db.SavingsGoals.Remove(goal);
-        await _db.SaveChangesAsync(ct);
-        return true;
+        catch { return false; }
     }
 }

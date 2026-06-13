@@ -3,7 +3,7 @@ using System.Data;
 
 namespace dotnet_mvc.Models.DAL;
 
-// Classe base para acesso à base de dados via stored procedures (padrão ADO.NET direto).
+// Classe base para acesso à base de dados via stored procedures
 // Todas as classes CRUD herdam desta para reutilizar a gestão de ligação.
 public class DriverDB
 {
@@ -18,7 +18,15 @@ public class DriverDB
         cmd.Connection = conn;
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         var dt = new DataTable();
-        dt.Load(reader);
+        for (int i = 0; i < reader.FieldCount; i++)
+            dt.Columns.Add(reader.GetName(i), reader.GetFieldType(i));
+        while (await reader.ReadAsync(ct))
+        {
+            var row = dt.NewRow();
+            for (int i = 0; i < reader.FieldCount; i++)
+                row[i] = reader.IsDBNull(i) ? DBNull.Value : reader.GetValue(i);
+            dt.Rows.Add(row);
+        }
         return dt;
     }
 

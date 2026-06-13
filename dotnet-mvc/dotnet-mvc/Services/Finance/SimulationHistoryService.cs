@@ -1,7 +1,7 @@
-using dotnet_mvc.Data;
-using dotnet_mvc.Models;
+using System.Data;
+using dotnet_mvc.Models.DAL;
 using dotnet_mvc.ViewModels.Student;
-using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace dotnet_mvc.Services.Finance;
 
@@ -11,65 +11,67 @@ public interface ISimulationHistoryService
     Task<IReadOnlyList<SimulationHistoryItemViewModel>> GetUserHistoryAsync(int userId, int limit = 10, CancellationToken ct = default);
 }
 
-public sealed class SimulationHistoryService : ISimulationHistoryService
+public sealed class SimulationHistoryService : DriverDB, ISimulationHistoryService
 {
-    private readonly AppDbContext _db;
-
-    public SimulationHistoryService(AppDbContext db) => _db = db;
-
-    public async Task SaveAsync(int userId, SimulationRequest request, SimulationResult result, CancellationToken ct = default)
+    public async Task SaveAsync(
+        int userId, SimulationRequest request, SimulationResult result, CancellationToken ct = default)
     {
-        _db.SimulationHistories.Add(new SimulationHistory
-        {
-            UserId = userId,
-            Strategy = request.Strategy,
-            RendimentoMensal = request.RendimentoMensal,
-            DespesasMensais = request.DespesasMensais,
-            Meses = request.Meses,
-            TaxaEsforco = result.TaxaEsforco?.TaxaEsforco,
-            TaxaEsforcoClassificacao = result.TaxaEsforco?.Classificacao,
-            MontanteFinal = result.Capitalizacao?.MontanteFinal,
-            PoupancaAcumulada = result.Projecao?.PoupancaAcumulada,
-            CreatedAtUtc = DateTime.UtcNow
-        });
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_SaveSimulation";
+        cmd.Parameters.Add("p_user_id",            MySqlDbType.Int32).Value        = userId;
+        cmd.Parameters.Add("p_strategy",           MySqlDbType.VarChar, 32).Value  = request.Strategy ?? "";
+        cmd.Parameters.Add("p_rendimento_mensal",  MySqlDbType.Decimal).Value      = request.RendimentoMensal;
+        cmd.Parameters.Add("p_despesas_mensais",   MySqlDbType.Decimal).Value      = request.DespesasMensais;
+        cmd.Parameters.Add("p_meses",              MySqlDbType.Int32).Value        = request.Meses;
+        cmd.Parameters.Add("p_taxa_esforco",       MySqlDbType.Decimal).Value      = (object?)result.TaxaEsforco?.TaxaEsforco ?? DBNull.Value;
+        cmd.Parameters.Add("p_taxa_esforco_class", MySqlDbType.VarChar, 80).Value  = (object?)result.TaxaEsforco?.Classificacao ?? DBNull.Value;
+        cmd.Parameters.Add("p_montante_final",     MySqlDbType.Decimal).Value      = (object?)result.Capitalizacao?.MontanteFinal ?? DBNull.Value;
+        cmd.Parameters.Add("p_poupanca_acumulada", MySqlDbType.Decimal).Value      = (object?)result.Projecao?.PoupancaAcumulada ?? DBNull.Value;
 
-        await _db.SaveChangesAsync(ct);
+        MySqlParameter pId = new MySqlParameter("p_id", MySqlDbType.Int32) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pId);
+
+        try { await ExecuteNonQueryAsync(cmd, ct); }
+        catch { /* histórico é opcional — não propaga erro */ }
     }
 
     public async Task<IReadOnlyList<SimulationHistoryItemViewModel>> GetUserHistoryAsync(
         int userId, int limit = 10, CancellationToken ct = default)
     {
-        var rows = await _db.SimulationHistories
-            .AsNoTracking()
-            .Where(h => h.UserId == userId)
-            .OrderByDescending(h => h.CreatedAtUtc)
-            .Take(limit)
-            .Select(h => new
-            {
-                h.Id, h.Strategy, h.RendimentoMensal, h.DespesasMensais,
-                h.Meses, h.TaxaEsforco, h.TaxaEsforcoClassificacao,
-                h.MontanteFinal, h.PoupancaAcumulada, h.CreatedAtUtc
-            })
-            .ToListAsync(ct);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_GetSimulationHistory";
+        cmd.Parameters.Add("p_user_id", MySqlDbType.Int32).Value = userId;
+        cmd.Parameters.Add("p_limit",   MySqlDbType.Int32).Value = limit;
 
-        return rows.Select(h => new SimulationHistoryItemViewModel
+        DataTable dt   = await GetSelectAsync(cmd, ct);
+        var result     = new List<SimulationHistoryItemViewModel>(dt.Rows.Count);
+
+        foreach (DataRow row in dt.Rows)
         {
-            Id = h.Id,
-            Strategy = h.Strategy,
-            StrategyLabel = h.Strategy switch
+            var strategy = row["Strategy"].ToString() ?? "";
+            result.Add(new SimulationHistoryItemViewModel
             {
-                "conservative" => "Conservadora",
-                "aggressive"   => "Agressiva",
-                _              => "Moderada"
-            },
-            RendimentoMensal = h.RendimentoMensal,
-            DespesasMensais = h.DespesasMensais,
-            Meses = h.Meses,
-            TaxaEsforco = h.TaxaEsforco,
-            TaxaEsforcoClassificacao = h.TaxaEsforcoClassificacao,
-            MontanteFinal = h.MontanteFinal,
-            PoupancaAcumulada = h.PoupancaAcumulada,
-            CreatedAtUtc = h.CreatedAtUtc
-        }).ToList();
+                Id                      = Convert.ToInt32(row["Id"]),
+                Strategy                = strategy,
+                StrategyLabel           = strategy switch
+                {
+                    "conservative" => "Conservadora",
+                    "aggressive"   => "Agressiva",
+                    _              => "Moderada"
+                },
+                RendimentoMensal        = row["RendimentoMensal"]       is DBNull ? 0m  : Convert.ToDecimal(row["RendimentoMensal"]),
+                DespesasMensais         = row["DespesasMensais"]        is DBNull ? 0m  : Convert.ToDecimal(row["DespesasMensais"]),
+                Meses                   = row["Meses"]                  is DBNull ? 0   : Convert.ToInt32(row["Meses"]),
+                TaxaEsforco             = row["TaxaEsforco"]            is DBNull ? null : Convert.ToDecimal(row["TaxaEsforco"]),
+                TaxaEsforcoClassificacao = row["TaxaEsforcoClassificacao"] is DBNull ? null : row["TaxaEsforcoClassificacao"].ToString(),
+                MontanteFinal           = row["MontanteFinal"]          is DBNull ? null : Convert.ToDecimal(row["MontanteFinal"]),
+                PoupancaAcumulada       = row["PoupancaAcumulada"]      is DBNull ? null : Convert.ToDecimal(row["PoupancaAcumulada"]),
+                CreatedAtUtc            = Convert.ToDateTime(row["CreatedAtUtc"])
+            });
+        }
+
+        return result;
     }
 }

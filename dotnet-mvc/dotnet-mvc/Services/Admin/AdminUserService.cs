@@ -1,176 +1,153 @@
-using dotnet_mvc.Data;
+using System.Data;
+using dotnet_mvc.Models.DAL;
 using dotnet_mvc.Security;
 using dotnet_mvc.ViewModels.Admin;
-using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace dotnet_mvc.Services.Admin;
 
 public interface IAdminUserService
 {
     Task<IReadOnlyList<UserListItemViewModel>> GetUsersAsync(
-        string? search,
-        string? role,
-        string? status,
+        string? search, string? role, string? status,
         CancellationToken cancellationToken = default);
 
     Task<(bool Success, bool IsNowActive, string UserName)> ToggleUserStatusAsync(
-        int userId,
-        int adminId,
+        int userId, int adminId,
         CancellationToken cancellationToken = default);
 
     Task<(bool Success, string UserName, string NewRole)> ChangeUserRoleAsync(
-        int userId,
-        string newRole,
-        int adminId,
+        int userId, string newRole, int adminId,
         CancellationToken cancellationToken = default);
 
     Task<AdminDashboardViewModel> GetAdminDashboardAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class AdminUserService : IAdminUserService
+public sealed class AdminUserService : DriverDB, IAdminUserService
 {
-    private readonly AppDbContext _dbContext;
-
-    public AdminUserService(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-
     public async Task<IReadOnlyList<UserListItemViewModel>> GetUsersAsync(
-        string? search,
-        string? role,
-        string? status,
+        string? search, string? role, string? status,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Users.AsNoTracking();
+        var normalizedRole   = !string.IsNullOrWhiteSpace(role)   && UserRoles.IsSupported(role)  ? role.Trim()   : "";
+        var normalizedStatus = status switch { "active" => "Active", "inactive" => "Inactive", _ => "" };
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim();
-            query = query.Where(u => EF.Functions.Like(u.Name, $"%{term}%")
-                                  || EF.Functions.Like(u.Email, $"%{term}%"));
-        }
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_GetUsers";
+        cmd.Parameters.Add("p_search", MySqlDbType.VarChar, 256).Value = search?.Trim() ?? "";
+        cmd.Parameters.Add("p_role",   MySqlDbType.VarChar, 32).Value  = normalizedRole;
+        cmd.Parameters.Add("p_status", MySqlDbType.VarChar, 32).Value  = normalizedStatus;
 
-        if (!string.IsNullOrWhiteSpace(role) && UserRoles.IsSupported(role))
-        {
-            query = query.Where(u => u.Role == role);
-        }
+        DataTable dt     = await GetSelectAsync(cmd, cancellationToken);
+        var result       = new List<UserListItemViewModel>(dt.Rows.Count);
 
-        if (status == "active")
+        foreach (DataRow row in dt.Rows)
         {
-            query = query.Where(u => u.UserStatus == "Active");
-        }
-        else if (status == "inactive")
-        {
-            query = query.Where(u => u.UserStatus != "Active");
-        }
-
-        return await query
-            .OrderBy(u => u.Name)
-            .Select(u => new UserListItemViewModel
+            var r = row["Role"].ToString() ?? "";
+            result.Add(new UserListItemViewModel
             {
-                Id = u.Id,
-                Name = u.Name,
-                Email = u.Email,
-                Role = u.Role,
-                RoleLabel = u.Role == UserRoles.Professor ? "Professor"
-                           : u.Role == UserRoles.Admin    ? "Administrador"
-                           :                               "Aluno",
-                IsActive = u.UserStatus == "Active",
-                LastLoginAtUtc = u.LastLoginAtUtc
-            })
-            .ToListAsync(cancellationToken);
+                Id            = Convert.ToInt32(row["Id"]),
+                Name          = row["Name"].ToString()!,
+                Email         = row["Email"].ToString()!,
+                Role          = r,
+                RoleLabel     = r == UserRoles.Professor ? "Professor"
+                              : r == UserRoles.Admin     ? "Administrador"
+                              :                            "Aluno",
+                IsActive      = row["UserStatus"].ToString() == "Active",
+                LastLoginAtUtc = row["LastLoginAtUtc"] is DBNull ? null : Convert.ToDateTime(row["LastLoginAtUtc"])
+            });
+        }
+
+        return result;
     }
 
     public async Task<(bool Success, bool IsNowActive, string UserName)> ToggleUserStatusAsync(
-        int userId,
-        int adminId,
-        CancellationToken cancellationToken = default)
+        int userId, int adminId, CancellationToken cancellationToken = default)
     {
-        if (userId == adminId)
+        if (userId == adminId) return (false, true, string.Empty);
+
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_ToggleUserStatus";
+        cmd.Parameters.Add("p_user_id",    MySqlDbType.Int32).Value = userId;
+
+        MySqlParameter pStatus = new MySqlParameter("p_new_status", MySqlDbType.VarChar, 32) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pStatus);
+
+        try
         {
-            return (false, true, string.Empty);
+            await ExecuteNonQueryAsync(cmd, cancellationToken);
+            var newStatus = pStatus.Value?.ToString() ?? "";
+            if (string.IsNullOrEmpty(newStatus)) return (false, false, string.Empty);
+
+            // Fetch name for the feedback message
+            var name = await GetUserNameAsync(userId, cancellationToken);
+            return (true, newStatus == "Active", name);
         }
-
-        var user = await _dbContext.Users
-            .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
-
-        if (user is null)
-        {
-            return (false, false, string.Empty);
-        }
-
-        var isNowActive = user.UserStatus != "Active";
-        user.UserStatus = isNowActive ? "Active" : "Inactive";
-
-        // Ao desativar o utilizador, a sua cookie expira naturalmente ao fim da sessão
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return (true, isNowActive, user.Name);
+        catch { return (false, false, string.Empty); }
     }
 
     public async Task<(bool Success, string UserName, string NewRole)> ChangeUserRoleAsync(
-        int userId,
-        string newRole,
-        int adminId,
-        CancellationToken cancellationToken = default)
+        int userId, string newRole, int adminId, CancellationToken cancellationToken = default)
     {
         if (!UserRoles.IsSupported(newRole) || userId == adminId)
-        {
             return (false, string.Empty, string.Empty);
-        }
 
-        var user = await _dbContext.Users
-            .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var normalized = UserRoles.Normalize(newRole);
 
-        if (user is null)
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_EditUserRole";
+        cmd.Parameters.Add("p_user_id",  MySqlDbType.Int32).Value       = userId;
+        cmd.Parameters.Add("p_new_role", MySqlDbType.VarChar, 32).Value = normalized;
+
+        MySqlParameter pHaErro = new MySqlParameter("p_ha_erro",  MySqlDbType.Byte)         { Direction = ParameterDirection.Output };
+        MySqlParameter pMsg    = new MySqlParameter("p_mensagem", MySqlDbType.VarChar, 500) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(pHaErro); cmd.Parameters.Add(pMsg);
+
+        try
         {
-            return (false, string.Empty, string.Empty);
-        }
+            await ExecuteNonQueryAsync(cmd, cancellationToken);
+            if (Convert.ToInt32(pHaErro.Value) != 0) return (false, string.Empty, string.Empty);
 
-        user.Role = UserRoles.Normalize(newRole);
-        // A cookie do utilizador expira naturalmente; no próximo login terá o novo papel
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return (true, user.Name, user.Role);
+            var name = await GetUserNameAsync(userId, cancellationToken);
+            return (true, name, normalized);
+        }
+        catch { return (false, string.Empty, string.Empty); }
     }
 
     public async Task<AdminDashboardViewModel> GetAdminDashboardAsync(CancellationToken cancellationToken = default)
     {
-        var userCounts = await _dbContext.Users
-            .AsNoTracking()
-            .GroupBy(u => new { u.Role, IsActive = u.UserStatus == "Active" })
-            .Select(g => new { g.Key.Role, g.Key.IsActive, Count = g.Count() })
-            .ToListAsync(cancellationToken);
+        MySqlCommand cmd = new MySqlCommand();
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = "sp_GetAdminDashboard";
 
-        var totalClassrooms = await _dbContext.Classrooms
-            .AsNoTracking()
-            .CountAsync(cancellationToken);
+        DataTable dt = await GetSelectAsync(cmd, cancellationToken);
+        if (dt.Rows.Count == 0) return new AdminDashboardViewModel();
 
-        var totalChallenges = await _dbContext.Challenges
-            .AsNoTracking()
-            .Where(ch => ch.PublishedAtUtc != null)
-            .CountAsync(cancellationToken);
-
-        var totalSubmissions = await _dbContext.ChallengeSubmissions
-            .AsNoTracking()
-            .CountAsync(cancellationToken);
-
-        var pendingSubmissions = await _dbContext.ChallengeSubmissions
-            .AsNoTracking()
-            .Where(s => s.Grade == null)
-            .CountAsync(cancellationToken);
-
+        DataRow row = dt.Rows[0];
         return new AdminDashboardViewModel
         {
-            TotalUsers = userCounts.Sum(g => g.Count),
-            StudentCount = userCounts.Where(g => g.Role == UserRoles.Student).Sum(g => g.Count),
-            ProfessorCount = userCounts.Where(g => g.Role == UserRoles.Professor).Sum(g => g.Count),
-            AdminCount = userCounts.Where(g => g.Role == UserRoles.Admin).Sum(g => g.Count),
-            ActiveCount = userCounts.Where(g => g.IsActive).Sum(g => g.Count),
-            TotalClassrooms = totalClassrooms,
-            TotalChallenges = totalChallenges,
-            TotalSubmissions = totalSubmissions,
-            PendingSubmissions = pendingSubmissions
+            TotalUsers       = Convert.ToInt32(row["TotalUsers"]),
+            StudentCount     = Convert.ToInt32(row["TotalStudents"]),
+            ProfessorCount   = Convert.ToInt32(row["TotalProfessors"]),
+            AdminCount       = Convert.ToInt32(row["TotalAdmins"]),
+            ActiveCount      = Convert.ToInt32(row["ActiveUsers"]),
+            TotalClassrooms  = Convert.ToInt32(row["TotalClassrooms"]),
+            TotalChallenges  = Convert.ToInt32(row["TotalChallenges"]),
+            TotalSubmissions = Convert.ToInt32(row["TotalSubmissions"]),
+            PendingSubmissions = Convert.ToInt32(row["PendingReviews"])
         };
+    }
+
+    private async Task<string> GetUserNameAsync(int userId, CancellationToken ct)
+    {
+        await using var conn = new MySqlConnection(DriverDB.ConnectionString);
+        await conn.OpenAsync(ct);
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Name FROM Users WHERE Id = @id LIMIT 1";
+        cmd.Parameters.AddWithValue("@id", userId);
+        return (await cmd.ExecuteScalarAsync(ct))?.ToString() ?? string.Empty;
     }
 }

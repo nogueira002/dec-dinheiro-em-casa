@@ -244,59 +244,50 @@ public class ProfessorController : AuthenticatedControllerBase
     {
         ApplyDashboardContext("Alunos", "progress", GetManagementRole());
 
-        IReadOnlyList<ClassroomOptionViewModel> availableClasses;
-        IReadOnlyList<ProfessorStudentListItemViewModel> students;
+        IReadOnlyList<ClassroomOptionViewModel> turmas;
+        IReadOnlyList<ProfessorStudentListItemViewModel> alunos;
+        int? turmaId;
 
         if (User.IsInRole(UserRoles.Admin))
         {
-            availableClasses = await _academicManagementService.GetAllClassroomOptionsAsync(onlyActive: false, cancellationToken);
-            var selectedClassId = availableClasses.Any(x => x.Id == classId) ? classId : null;
-            students = await _academicManagementService.GetAllStudentsAsync(selectedClassId, cancellationToken);
-            var model = new ProfessorStudentsIndexViewModel
-            {
-                SelectedClassId = selectedClassId,
-                AvailableClasses = availableClasses,
-                Students = students,
-                TotalStudents = students.Select(x => x.StudentId).Distinct().Count(),
-                TotalAvailableChallenges = students.Sum(x => x.AvailableChallengesCount),
-                TotalSubmittedChallenges = students.Sum(x => x.SubmittedChallengesCount),
-                TotalReviewedChallenges = students.Sum(x => x.ReviewedChallengesCount)
-            };
-            model.OverallCompletionRateLabel = model.TotalAvailableChallenges == 0
-                ? "0%"
-                : $"{Math.Round((decimal)model.TotalSubmittedChallenges * 100m / model.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
-            return View(model);
+            turmas  = await _academicManagementService.GetAllClassroomOptionsAsync(onlyActive: false, cancellationToken);
+            turmaId = turmas.Any(x => x.Id == classId) ? classId : null;
+            alunos  = await _academicManagementService.GetAllStudentsAsync(turmaId, cancellationToken);
+        }
+        else
+        {
+            var professorId = User.GetUserId();
+            if (!professorId.HasValue) return Forbid();
+
+            turmas  = await _academicManagementService.GetProfessorClassroomOptionsAsync(professorId.Value, onlyActive: false, cancellationToken);
+            turmaId = turmas.Any(x => x.Id == classId) ? classId : null;
+            alunos  = await _academicManagementService.GetProfessorStudentsAsync(professorId.Value, turmaId, cancellationToken);
         }
 
-        var professorId = User.GetUserId();
-        if (!professorId.HasValue) return Forbid();
+        return View(BuildProgressViewModel(turmas, alunos, turmaId));
+    }
 
-        availableClasses = await _academicManagementService.GetProfessorClassroomOptionsAsync(
-            professorId.Value, onlyActive: false, cancellationToken);
-
-        var selClassId = availableClasses.Any(x => x.Id == classId) ? classId : null;
-        var model2 = new ProfessorStudentsIndexViewModel
+    private static ProfessorStudentsIndexViewModel BuildProgressViewModel(
+        IReadOnlyList<ClassroomOptionViewModel> turmas,
+        IReadOnlyList<ProfessorStudentListItemViewModel> alunos,
+        int? turmaId)
+    {
+        var vm = new ProfessorStudentsIndexViewModel
         {
-            SelectedClassId = selClassId,
-            AvailableClasses = availableClasses,
-            Students = await _academicManagementService.GetProfessorStudentsAsync(
-                professorId.Value,
-                selClassId,
-                cancellationToken)
+            SelectedClassId          = turmaId,
+            AvailableClasses         = turmas,
+            Students                 = alunos,
+            TotalStudents            = alunos.Select(x => x.StudentId).Distinct().Count(),
+            TotalAvailableChallenges = alunos.Sum(x => x.AvailableChallengesCount),
+            TotalSubmittedChallenges = alunos.Sum(x => x.SubmittedChallengesCount),
+            TotalReviewedChallenges  = alunos.Sum(x => x.ReviewedChallengesCount)
         };
 
-        model2.TotalStudents = model2.Students
-            .Select(x => x.StudentId)
-            .Distinct()
-            .Count();
-        model2.TotalAvailableChallenges = model2.Students.Sum(x => x.AvailableChallengesCount);
-        model2.TotalSubmittedChallenges = model2.Students.Sum(x => x.SubmittedChallengesCount);
-        model2.TotalReviewedChallenges = model2.Students.Sum(x => x.ReviewedChallengesCount);
-        model2.OverallCompletionRateLabel = model2.TotalAvailableChallenges == 0
+        vm.OverallCompletionRateLabel = vm.TotalAvailableChallenges == 0
             ? "0%"
-            : $"{Math.Round((decimal)model2.TotalSubmittedChallenges * 100m / model2.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
+            : $"{Math.Round((decimal)vm.TotalSubmittedChallenges * 100m / vm.TotalAvailableChallenges, 1, MidpointRounding.AwayFromZero):0.#}%";
 
-        return View(model2);
+        return vm;
     }
 
     public IActionResult CreateChallenge(CancellationToken cancellationToken)
