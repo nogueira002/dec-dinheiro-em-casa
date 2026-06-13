@@ -1,0 +1,98 @@
+@model dotnet_mvc.ViewModels.Student.ProfileViewModel
+
+@{
+    ViewData["Title"]      = "Perfil";
+    ViewData["PageTitle"]  = "Perfil";
+    ViewData["Role"]       = "Student";
+    ViewData["ActiveMenu"] = "profile";
+    Layout = "_DashboardLayout";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">O meu perfil</h1>
+        <p class="page-header__subtitle">Atualiza os teus dados pessoais e password de acesso.</p>
+    </div>
+</div>
+
+<div class="form-page-wrapper">
+    <form asp-controller="Student" asp-action="Profile" method="post" novalidate>
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+
+        @* Dados pessoais *@
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Dados pessoais</h2>
+                    <p class="card__subtitle">O teu nome, email e informações básicas.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Name" class="form-label form-label--required"></label>
+                <input asp-for="Name" class="form-control" placeholder="O teu nome completo" />
+                <span asp-validation-for="Name" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="form-label form-label--required"></label>
+                <input asp-for="Email" class="form-control" type="email" placeholder="O teu email" />
+                <span asp-validation-for="Email" class="field-validation-error"></span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <select asp-for="Gender" class="form-select">
+                        <option value="">-- Não indicar --</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                        <option value="Other">Outro</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="field-validation-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BirthDate" class="form-label">Data de nascimento</label>
+                    <input asp-for="BirthDate" class="form-control" type="date" />
+                    <span asp-validation-for="BirthDate" class="field-validation-error"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Alterar password *@
+        <div class="card mb-6">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">Alterar password</h2>
+                    <p class="card__subtitle">Deixa em branco se não quiseres alterar a password.</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="NewPassword" class="form-label"></label>
+                    <input asp-for="NewPassword" class="form-control" type="password" autocomplete="new-password" placeholder="Nova password" />
+                    <span asp-validation-for="NewPassword" class="field-validation-error"></span>
+                    <span class="form-hint">Mínimo 8 caracteres.</span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmNewPassword" class="form-label"></label>
+                    <input asp-for="ConfirmNewPassword" class="form-control" type="password" autocomplete="new-password" placeholder="Confirmar nova password" />
+                    <span asp-validation-for="ConfirmNewPassword" class="field-validation-error"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn--primary btn--lg">Guardar alterações</button>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

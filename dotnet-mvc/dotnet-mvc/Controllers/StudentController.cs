@@ -4,6 +4,7 @@ using dotnet_mvc.Services.Academic;
 using dotnet_mvc.Services.Dashboard;
 using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
+using dotnet_mvc.Services.Student;
 using dotnet_mvc.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,7 @@ public class StudentController : AuthenticatedControllerBase
     private readonly IFinancialEntryService _entryService;
     private readonly ISavingsGoalService _goalService;
     private readonly ISimulationHistoryService _simulationHistoryService;
+    private readonly IProfileService _profileService;
 
     public StudentController(
         IAcademicManagementService academicManagementService,
@@ -27,6 +29,7 @@ public class StudentController : AuthenticatedControllerBase
         IScenarioService scenarioService,
         IFinanceApiClient financeApiClient,
         IFinancialEntryService entryService,
+        IProfileService profileService,
         ISavingsGoalService goalService,
         ISimulationHistoryService simulationHistoryService)
     {
@@ -35,6 +38,7 @@ public class StudentController : AuthenticatedControllerBase
         _scenarioService = scenarioService;
         _financeApiClient = financeApiClient;
         _entryService = entryService;
+        _profileService = profileService;
         _goalService = goalService;
         _simulationHistoryService = simulationHistoryService;
     }
@@ -754,6 +758,44 @@ public class StudentController : AuthenticatedControllerBase
             ModelState.AddModelError(string.Empty, ex.Message);
             return await ReturnWorkspace(challengeForm.ResponseText);
         }
+    }
+
+    // ===== Perfil =====
+
+    public async Task<IActionResult> Profile(CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Perfil", "profile", UserRoles.Student);
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue) return Forbid();
+
+        var model = await _profileService.GetProfileAsync(userId.Value, cancellationToken);
+        if (model is null) return NotFound();
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Profile(ProfileViewModel model, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Perfil", "profile", UserRoles.Student);
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue) return Forbid();
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var (sucesso, mensagem) = await _profileService.UpdateProfileAsync(userId.Value, model, cancellationToken);
+        if (!sucesso)
+        {
+            ModelState.AddModelError(nameof(model.Email), mensagem ?? "Não foi possível guardar o perfil.");
+            return View(model);
+        }
+
+        TempData["StatusType"]    = "success";
+        TempData["StatusMessage"] = "Perfil atualizado com sucesso.";
+        return RedirectToAction(nameof(Profile));
     }
 
     // ===== Helpers =====

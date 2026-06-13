@@ -286,26 +286,80 @@
     white-space: nowrap;
 }
 
-.sidebar-logout-form { display: inline-flex; }
+/* ─── Sidebar User Dropdown ──────────────────────────────── */
+.sidebar-user-wrap {
+    position: relative;
+}
 
-.sidebar-logout-btn {
-    display: flex;
-    width: 1.75rem;
-    height: 1.75rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.375rem;
-    color: var(--muted-fg);
+.sidebar-user-row {
+    width: 100%;
     background: none;
     border: none;
     cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 150ms ease, color 150ms ease;
+    text-align: left;
 }
 
-.sidebar-logout-btn:hover {
+.sidebar-user-chevron {
+    flex-shrink: 0;
+    color: var(--muted-fg);
+    transition: transform 200ms ease;
+}
+
+.sidebar-user-row[aria-expanded="true"] .sidebar-user-chevron {
+    transform: rotate(180deg);
+}
+
+.sidebar-user-dropdown {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 0.375rem);
+    left: 0;
+    right: 0;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 50;
+}
+
+.sidebar-user-dropdown--open {
+    display: block;
+}
+
+.sidebar-dropdown-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--fg);
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.sidebar-dropdown-item:hover {
+    background-color: var(--sb-accent);
+}
+
+.sidebar-dropdown-item--danger {
+    color: #dc2626;
+}
+
+.sidebar-dropdown-item--danger:hover {
     background-color: #fee2e2;
     color: #dc2626;
+}
+
+.sidebar-dropdown-sep {
+    height: 1px;
+    background-color: var(--border);
+    margin: 0.25rem 0;
 }
 
 /* ─── Main Inset ─────────────────────────────────────────── */

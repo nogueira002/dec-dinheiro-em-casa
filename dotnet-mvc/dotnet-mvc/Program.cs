@@ -6,6 +6,7 @@ using dotnet_mvc.Services.Dashboard;
 using dotnet_mvc.Services.Finance;
 using dotnet_mvc.Services.Scenarios;
 using dotnet_mvc.Models;
+using dotnet_mvc.Services.Student;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IScenarioService, ScenarioService>();
 builder.Services.AddScoped<IFinancialEntryService, FinancialEntryService>();
 builder.Services.AddScoped<ISavingsGoalService, SavingsGoalService>();
 builder.Services.AddScoped<ISimulationHistoryService, SimulationHistoryService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddHttpClient();
 
 // Cliente HTTP tipado para o microserviço de cálculo financeiro (API Django).

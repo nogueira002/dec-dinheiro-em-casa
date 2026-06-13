@@ -32,11 +32,13 @@ public class RegisterViewModel : IValidatableObject
     [Display(Name = "Perfil")]
     public string Role { get; set; } = UserRoles.Student;
 
-    [Range(typeof(bool), "true", "true", ErrorMessage = "Tens de aceitar os termos de utilização.")]
     public bool Terms { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (!Terms)
+            yield return new ValidationResult("Tens de aceitar os termos de utilização.", [nameof(Terms)]);
+
         if (!string.IsNullOrWhiteSpace(Role) &&
             Role != UserRoles.Student &&
             Role != UserRoles.Professor)

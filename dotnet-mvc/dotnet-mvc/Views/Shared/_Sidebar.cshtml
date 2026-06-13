@@ -242,27 +242,75 @@
 
         @* Footer / User *@
         <div class="sidebar-footer">
-            <div class="sidebar-user-row">
-                <span class="sidebar-avatar">@(userName.Length > 0 ? userName[0].ToString().ToUpper() : "U")</span>
-                <div class="sidebar-user-info">
-                    <span class="sidebar-user-name">@userName</span>
-                    <span class="sidebar-user-role">@userRoleLabel</span>
+            <div class="sidebar-user-wrap" id="sidebarUserWrap">
+
+                @* Dropdown — aparece acima do user row *@
+                <div class="sidebar-user-dropdown" id="sidebarUserDropdown" aria-hidden="true">
+                    @if (role == "Student")
+                    {
+                        <a class="sidebar-dropdown-item" asp-controller="Student" asp-action="Profile">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Perfil
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="sidebar-dropdown-item" asp-controller="Professor" asp-action="Profile">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Perfil
+                        </a>
+                    }
+                    <div class="sidebar-dropdown-sep"></div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post">
+                        <button type="submit"
+                                class="sidebar-dropdown-item sidebar-dropdown-item--danger"
+                                data-confirm="Queres mesmo terminar a sessão?">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            Terminar sessão
+                        </button>
+                    </form>
                 </div>
-                <form asp-controller="Auth" asp-action="Logout" method="post" class="sidebar-logout-form">
-                    <button type="submit"
-                            class="sidebar-logout-btn"
-                            data-confirm="Queres mesmo terminar a sessão?"
-                            title="Sair"
-                            aria-label="Terminar sessão">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                    </button>
-                </form>
+
+                @* User row — clicável *@
+                <button type="button" class="sidebar-user-row" id="sidebarUserBtn" aria-expanded="false" aria-controls="sidebarUserDropdown">
+                    <span class="sidebar-avatar">@(userName.Length > 0 ? userName[0].ToString().ToUpper() : "U")</span>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name">@userName</span>
+                        <span class="sidebar-user-role">@userRoleLabel</span>
+                    </div>
+                    <svg class="sidebar-user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                </button>
+
             </div>
         </div>
+
+        <script>
+            (function () {
+                var btn  = document.getElementById('sidebarUserBtn');
+                var drop = document.getElementById('sidebarUserDropdown');
+                if (!btn || !drop) return;
+
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var open = btn.getAttribute('aria-expanded') === 'true';
+                    btn.setAttribute('aria-expanded', String(!open));
+                    drop.setAttribute('aria-hidden', String(open));
+                    drop.classList.toggle('sidebar-user-dropdown--open', !open);
+                });
+
+                document.addEventListener('click', function () {
+                    btn.setAttribute('aria-expanded', 'false');
+                    drop.setAttribute('aria-hidden', 'true');
+                    drop.classList.remove('sidebar-user-dropdown--open');
+                });
+            })();
+        </script>
 
     </div>
 </aside>

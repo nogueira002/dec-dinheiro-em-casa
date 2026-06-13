@@ -1,7 +1,9 @@
 using dotnet_mvc.Extensions;
 using dotnet_mvc.Security;
 using dotnet_mvc.Services.Academic;
+using dotnet_mvc.Services.Student;
 using dotnet_mvc.ViewModels.Professor;
+using dotnet_mvc.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -13,13 +15,16 @@ public class ProfessorController : AuthenticatedControllerBase
 {
     private readonly IAcademicManagementService _academicManagementService;
     private readonly IAccessCodeService _accessCodeService;
+    private readonly IProfileService _profileService;
 
     public ProfessorController(
         IAcademicManagementService academicManagementService,
-        IAccessCodeService accessCodeService)
+        IAccessCodeService accessCodeService,
+        IProfileService profileService)
     {
         _academicManagementService = academicManagementService;
         _accessCodeService = accessCodeService;
+        _profileService = profileService;
     }
 
     public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
@@ -493,6 +498,44 @@ public class ProfessorController : AuthenticatedControllerBase
             : "Não foi possível remover o aluno da turma.";
 
         return RedirectToAction(nameof(Classes));
+    }
+
+    // ===== Perfil =====
+
+    public async Task<IActionResult> Profile(CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Perfil", "profile", GetManagementRole());
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue) return Forbid();
+
+        var model = await _profileService.GetProfileAsync(userId.Value, cancellationToken);
+        if (model is null) return NotFound();
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Profile(ProfileViewModel model, CancellationToken cancellationToken)
+    {
+        ApplyDashboardContext("Perfil", "profile", GetManagementRole());
+
+        var userId = User.GetUserId();
+        if (!userId.HasValue) return Forbid();
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var (sucesso, mensagem) = await _profileService.UpdateProfileAsync(userId.Value, model, cancellationToken);
+        if (!sucesso)
+        {
+            ModelState.AddModelError(nameof(model.Email), mensagem ?? "Não foi possível guardar o perfil.");
+            return View(model);
+        }
+
+        TempData["StatusType"]    = "success";
+        TempData["StatusMessage"] = "Perfil atualizado com sucesso.";
+        return RedirectToAction(nameof(Profile));
     }
 
     private string GetManagementRole()

@@ -916,4 +916,160 @@ BEGIN
     END IF;
 END$$
 
+-- ============================================================
+-- CENÁRIOS — listagem e dados rápidos
+-- ============================================================
+
+DROP PROCEDURE IF EXISTS sp_GetUserScenarios$$
+CREATE PROCEDURE sp_GetUserScenarios(IN p_user_id INT)
+BEGIN
+    SELECT Id, Name, Location, MembersCount, InitialBalance,
+           ProfileType, CreatedAtUtc, UpdatedAtUtc
+    FROM Scenarios
+    WHERE OwnerId = p_user_id
+    ORDER BY UpdatedAtUtc DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_GetScenarioQuickData$$
+CREATE PROCEDURE sp_GetScenarioQuickData(IN p_scenario_id INT, IN p_owner_id INT)
+BEGIN
+    SELECT
+        COALESCE(SUM(CASE WHEN fe.EntryType = 'Income'  THEN fe.Amount ELSE 0 END), 0) AS rendimento_mensal,
+        COALESCE(SUM(CASE WHEN fe.EntryType = 'Expense' THEN fe.Amount ELSE 0 END), 0) AS despesas_mensais,
+        COALESCE(SUM(CASE WHEN fe.EntryType = 'Expense' AND fe.IsRecurring = 1 THEN fe.Amount ELSE 0 END), 0) AS encargos_fixos,
+        COALESCE((SELECT SUM(sg.SavedAmount) FROM SavingsGoals sg WHERE sg.ScenarioId = p_scenario_id), 0) AS capital_poupanca
+    FROM FinancialEntries fe
+    WHERE fe.ScenarioId = p_scenario_id
+      AND fe.ScenarioId IN (SELECT Id FROM Scenarios WHERE Id = p_scenario_id AND OwnerId = p_owner_id);
+END$$
+
+-- ============================================================
+-- LANÇAMENTOS FINANCEIROS
+-- ============================================================
+
+DROP PROCEDURE IF EXISTS sp_GetScenarioEntries$$
+CREATE PROCEDURE sp_GetScenarioEntries(IN p_scenario_id INT, IN p_owner_id INT, IN p_type_filter VARCHAR(16))
+BEGIN
+    SELECT fe.Id, fe.EntryType, fe.Category, fe.Amount, fe.Month, fe.Year, fe.IsRecurring
+    FROM FinancialEntries fe
+    INNER JOIN Scenarios s ON s.Id = fe.ScenarioId
+    WHERE fe.ScenarioId = p_scenario_id
+      AND s.OwnerId = p_owner_id
+      AND (p_type_filter = '' OR fe.EntryType = p_type_filter)
+    ORDER BY fe.Year DESC, fe.Month DESC, fe.Id DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_AddFinancialEntry$$
+CREATE PROCEDURE sp_AddFinancialEntry(
+    IN  p_scenario_id  INT,
+    IN  p_owner_id     INT,
+    IN  p_entry_type   VARCHAR(16),
+    IN  p_category     VARCHAR(80),
+    IN  p_amount       DECIMAL(12,2),
+    IN  p_month        INT,
+    IN  p_year         INT,
+    IN  p_is_recurring TINYINT(1),
+    OUT p_ha_erro      TINYINT(1),
+    OUT p_mensagem     VARCHAR(500))
+BEGIN
+    SET p_ha_erro = 0; SET p_mensagem = '';
+    IF NOT EXISTS (SELECT 1 FROM Scenarios WHERE Id = p_scenario_id AND OwnerId = p_owner_id) THEN
+        SET p_ha_erro = 1;
+        SET p_mensagem = 'Cenário não encontrado ou sem permissão.';
+    ELSE
+        INSERT INTO FinancialEntries (ScenarioId, EntryType, Category, Amount, Month, Year, IsRecurring)
+        VALUES (p_scenario_id, p_entry_type, p_category, p_amount, p_month, p_year, p_is_recurring);
+    END IF;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_UpdateFinancialEntry$$
+CREATE PROCEDURE sp_UpdateFinancialEntry(
+    IN  p_entry_id     INT,
+    IN  p_owner_id     INT,
+    IN  p_entry_type   VARCHAR(16),
+    IN  p_category     VARCHAR(80),
+    IN  p_amount       DECIMAL(12,2),
+    IN  p_month        INT,
+    IN  p_year         INT,
+    IN  p_is_recurring TINYINT(1),
+    OUT p_ha_erro      TINYINT(1),
+    OUT p_mensagem     VARCHAR(500))
+BEGIN
+    SET p_ha_erro = 0; SET p_mensagem = '';
+    IF NOT EXISTS (
+        SELECT 1 FROM FinancialEntries fe
+        INNER JOIN Scenarios s ON s.Id = fe.ScenarioId
+        WHERE fe.Id = p_entry_id AND s.OwnerId = p_owner_id
+    ) THEN
+        SET p_ha_erro = 1;
+        SET p_mensagem = 'Lançamento não encontrado ou sem permissão.';
+    ELSE
+        UPDATE FinancialEntries
+        SET EntryType = p_entry_type, Category = p_category, Amount = p_amount,
+            Month = p_month, Year = p_year, IsRecurring = p_is_recurring
+        WHERE Id = p_entry_id;
+    END IF;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_DeleteFinancialEntry$$
+CREATE PROCEDURE sp_DeleteFinancialEntry(
+    IN  p_entry_id  INT,
+    IN  p_owner_id  INT,
+    OUT p_ha_erro   TINYINT(1),
+    OUT p_mensagem  VARCHAR(500))
+BEGIN
+    SET p_ha_erro = 0; SET p_mensagem = '';
+    IF NOT EXISTS (
+        SELECT 1 FROM FinancialEntries fe
+        INNER JOIN Scenarios s ON s.Id = fe.ScenarioId
+        WHERE fe.Id = p_entry_id AND s.OwnerId = p_owner_id
+    ) THEN
+        SET p_ha_erro = 1;
+        SET p_mensagem = 'Lançamento não encontrado ou sem permissão.';
+    ELSE
+        DELETE FROM FinancialEntries WHERE Id = p_entry_id;
+    END IF;
+END$$
+    
+    
+    
+-- Perfil do aluno 
+DROP PROCEDURE IF EXISTS sp_GetUserProfile$$
+CREATE PROCEDURE sp_GetUserProfile(IN p_user_id INT)
+BEGIN
+    SELECT Id, Name, Email, Gender, BirthDate
+    FROM Users
+    WHERE Id = p_user_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_UpdateUserProfile$$
+CREATE PROCEDURE sp_UpdateUserProfile(
+    IN  p_user_id       INT,
+    IN  p_name          VARCHAR(120),
+    IN  p_email         VARCHAR(256),
+    IN  p_gender        VARCHAR(10),
+    IN  p_birthdate     DATE,
+    IN  p_password_hash VARCHAR(512),
+    OUT p_ha_erro       TINYINT(1),
+    OUT p_mensagem      VARCHAR(500))
+BEGIN
+    SET p_ha_erro = 0; SET p_mensagem = '';
+    IF NOT EXISTS (SELECT 1 FROM Users WHERE Id = p_user_id) THEN
+        SET p_ha_erro = 1;
+        SET p_mensagem = 'Utilizador não encontrado.';
+    ELSEIF p_email != '' AND EXISTS (SELECT 1 FROM Users WHERE Email = p_email AND Id != p_user_id) THEN
+        SET p_ha_erro = 2;
+        SET p_mensagem = 'Este email já está em uso por outra conta.';
+    ELSE
+        UPDATE Users
+        SET Name         = p_name,
+            Email        = IF(p_email != '', p_email, Email),
+            Gender       = NULLIF(p_gender, ''),
+            BirthDate    = p_birthdate,
+            PasswordHash = IF(p_password_hash != '', p_password_hash, PasswordHash)
+        WHERE Id = p_user_id;
+    END IF;
+END$$
+
 DELIMITER ;
